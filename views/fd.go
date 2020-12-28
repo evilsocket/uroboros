@@ -82,7 +82,7 @@ func NewFDView() *FDView {
 	v.table.RowSeparator = true
 	v.table.FillRow = true
 	v.table.Rows = [][]string{
-		{"", "", "", "", ""},
+		{"", "", ""},
 	}
 	v.table.ColumnResizer = v.setColumnSizes
 
@@ -182,9 +182,7 @@ func (v *FDView) Update(state *host.State) error {
 
 		rows = append(rows, []string{
 			fmt.Sprintf(" %s", fdName),
-			fmt.Sprintf(" %s", target),
-			fmt.Sprintf(" %s", perms),
-			fmt.Sprintf(" %s", sizeStr),
+			fmt.Sprintf(" %s %s %s", target, perms, sizeStr),
 			fmt.Sprintf(" 0x%s (%s)", state.Process.FDs[i].Flags, strings.Join(flags, ", ")),
 		})
 	}
@@ -207,7 +205,7 @@ func (v *FDView) Update(state *host.State) error {
 	}
 
 	v.table.Rows = [][]string{
-		{fmt.Sprintf(" number %s", scrollMsg), " target", " perms ", " size ", " flags"},
+		{fmt.Sprintf(" number %s", scrollMsg), " target", " flags"},
 	}
 
 	v.table.Rows = append(v.table.Rows, rows...)
