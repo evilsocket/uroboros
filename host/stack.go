@@ -43,6 +43,10 @@ func parseProcessStack(pid int) (ProcessStack, error) {
 			var entry StackEntry
 
 			line := str.Trim(scanner.Text())
+			if line == "[<0>] 0xffffffffffffffff" {
+				continue
+			}
+
 			m := stackParser.FindStringSubmatch(line)
 			if m == nil {
 				panic(fmt.Errorf("could not parse stack line from %s: %s", filename, line))
