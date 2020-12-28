@@ -187,7 +187,7 @@ func (v *FDView) Update(state *host.State) error {
 		})
 	}
 
-	doReset := v.t >= pointsInTime
+	doReset := v.t >= pointsInTime(v.plot)
 	if doReset {
 		v.t = 0
 	}

@@ -61,7 +61,7 @@ func (v *IOView) Update(state *host.State) error {
 		return err
 	}
 
-	doReset := v.t >= pointsInTime
+	doReset := v.t >= pointsInTime(v.char)
 	if doReset {
 		v.t = 0
 	}

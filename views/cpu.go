@@ -12,7 +12,6 @@ func init() {
 	registered["cpu"] = NewCPUView()
 }
 
-const pointsInTime = 200 // TODO: adjust depending on terminal width
 const clockTicks = 100.0
 
 type cpuHistory struct {
@@ -73,7 +72,7 @@ func (v *CPUView) Update(state *host.State) error {
 
 	v.history.Set(state)
 
-	if v.t >= pointsInTime {
+	if v.t >= pointsInTime(v.plot) {
 		v.t = 0
 		v.plot.Data[0] = []float64{100.0}
 	}

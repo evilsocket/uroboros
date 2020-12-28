@@ -81,13 +81,12 @@ func autosizeTable(table *widgets.Table) {
 	}
 }
 
-
 func tableVisibleRows(table *widgets.Table) int {
 	// one row for data and one for divider
 	return table.Inner.Dy() / 2
 }
 
-func tableSetScroll(table *widgets.Table, totRows int, cursor int) (bool, string, int, int){
+func tableSetScroll(table *widgets.Table, totRows int, cursor int) (bool, string, int, int) {
 	table.Lock()
 	defer table.Unlock()
 
@@ -112,4 +111,14 @@ func tableSetScroll(table *widgets.Table, totRows int, cursor int) (bool, string
 	}
 
 	return hasScroll, scroll, from, to
+}
+
+func pointsInTime(plot *widgets.Plot) int {
+	dx := plot.Dx()
+	if dx > 10 {
+		return dx - 10
+	}
+
+	w, _ := ui.TerminalDimensions()
+	return w
 }
