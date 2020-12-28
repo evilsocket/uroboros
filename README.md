@@ -18,6 +18,8 @@ For more options:
     
     ./_build/uro -help
 
+Navigate tabs with left and right arrows, scroll tables with up and down arrows, lists with j and k.
+
 ## License
 
 Released under the GPL 3 license.
