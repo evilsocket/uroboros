@@ -82,7 +82,7 @@ type NetworkEntry struct {
 
 func (e NetworkEntry) String() string {
 	if e.Proto == "unix" {
-		return fmt.Sprintf("(%s) [0x%x %s] path='%s'", e.Proto, e.Type, e.TypeString, e.Path)
+		return fmt.Sprintf("(%s) %s path='%s'", e.Proto, e.TypeString, e.Path)
 
 	} else if e.State == TCP_LISTEN {
 		return fmt.Sprintf("(%s) %s:%d LISTENING", e.Proto, e.SrcIP, e.SrcPort)

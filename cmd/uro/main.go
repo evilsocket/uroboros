@@ -7,11 +7,15 @@ import (
 	"github.com/evilsocket/uroboros/views"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
+	"github.com/prometheus/procfs"
 	"os"
+	"strings"
 	"time"
 )
 
 var targetPID = 0
+var targetName = ""
+
 var tabIDs = []string{"info", "cpu", "stack", "mem", "maps", "io", "fd"}
 var tabTitles = []string{}
 var tabViews = []views.View{}
@@ -24,6 +28,7 @@ var tabs *widgets.TabPane
 
 func init() {
 	flag.IntVar(&targetPID, "pid", 0, "Process ID to monitor.")
+	flag.StringVar(&targetName, "name", "", "Search target process by name.")
 }
 
 func getActiveTab() views.View {
@@ -34,7 +39,7 @@ func getActiveTab() views.View {
 	return tabViews[idx]
 }
 
- func setupGrid() {
+func setupGrid() {
 	grid.Lock()
 	defer grid.Unlock()
 
@@ -48,7 +53,7 @@ func getActiveTab() views.View {
 		ui.NewRow(headRatio,
 			ui.NewCol(1.0, tabs),
 		),
-		ui.NewRow(1 - headRatio,
+		ui.NewRow(1-headRatio,
 			ui.NewCol(1.0, currTabDrawable),
 		),
 	)
@@ -69,6 +74,37 @@ func updateAllTabs() {
 
 func main() {
 	flag.Parse()
+
+	// TODO: handle errors with something better than a panic(err)
+
+	if targetName != "" {
+		if procs, err := procfs.AllProcs(); err !=  nil {
+			panic(err)
+		} else {
+			matches := make(map[int]string)
+			for _, proc := range procs {
+				if comm, _ := proc.Comm(); comm != "" && strings.Index(comm, targetName) != -1 {
+					matches[proc.PID] = comm
+				}
+			}
+
+			if num := len(matches); num == 0 {
+				fmt.Printf("no matches for '%s'\n", targetName)
+				return
+			} else if num > 1 {
+				fmt.Printf("multiple matches for '%s':\n", targetName)
+				for pid, comm := range matches {
+					fmt.Printf("[%d] %s\n", pid, comm)
+				}
+				return
+			} else {
+				for pid := range matches {
+					targetPID = pid
+					break
+				}
+			}
+		}
+	}
 
 	if targetPID <= 0 {
 		targetPID = os.Getpid()
@@ -91,7 +127,6 @@ func main() {
 	}
 
 	tabs = widgets.NewTabPane(tabTitles...)
-
 
 	updateAllTabs()
 	setupGrid()
