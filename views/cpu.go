@@ -1,0 +1,91 @@
+package views
+
+import (
+	"fmt"
+	"github.com/evilsocket/uroboros/host"
+	ui "github.com/gizak/termui/v3"
+	"github.com/gizak/termui/v3/widgets"
+	"time"
+)
+
+func init() {
+	registered["cpu"] = NewCPUView()
+}
+
+const pointsInTime = 200 // TODO: adjust depending on terminal width
+const clockTicks = 100.0
+
+type cpuHistory struct {
+	Inited bool
+	At     time.Time
+	STime  uint
+	UTime  uint
+}
+
+func (h *cpuHistory) Set(state *host.State) {
+	h.Inited = true
+	h.At = state.ObservedAt
+	h.STime = state.ProcessStat.STime
+	h.UTime = state.ProcessStat.UTime
+}
+
+type CPUView struct {
+	history cpuHistory
+	plot    *widgets.Plot
+	t       int
+	last    float64
+}
+
+func NewCPUView() *CPUView {
+	v := CPUView{
+		plot: widgets.NewPlot(),
+	}
+
+	v.plot.Title = " CPU Usage "
+	v.plot.AxesColor = ui.ColorWhite
+	v.plot.Data = make([][]float64, 1)
+	v.plot.Data[0] = []float64{100.0}
+
+	return &v
+}
+
+func (v *CPUView) Event(e ui.Event) {
+
+}
+
+func (v *CPUView) Title() string {
+	return fmt.Sprintf("cpu %.1f%%", v.last)
+}
+
+func (v *CPUView) Update(state *host.State) error {
+	if !v.history.Inited {
+		v.history.Set(state)
+		return nil
+	}
+
+	totalStime := float64(state.ProcessStat.STime - v.history.STime)
+	totalUtime := float64(state.ProcessStat.UTime - v.history.UTime)
+	total := totalStime + totalUtime
+
+	total /= clockTicks
+	seconds := state.ObservedAt.Sub(v.history.At).Seconds()
+	cpu := (total / seconds) * 100.0
+
+	v.history.Set(state)
+
+	if v.t >= pointsInTime {
+		v.t = 0
+		v.plot.Data[0] = []float64{100.0}
+	}
+
+	v.last = cpu
+	v.plot.Title = fmt.Sprintf(" CPU Usage %.1f%% ", cpu)
+	v.plot.Data[0] = append(v.plot.Data[0], cpu)
+	v.t++
+
+	return nil
+}
+
+func (v *CPUView) Render() ui.Drawable {
+	return v.plot
+}
