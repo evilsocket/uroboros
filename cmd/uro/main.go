@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/evilsocket/uroboros/host"
 	"github.com/evilsocket/uroboros/views"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
@@ -20,6 +21,7 @@ func init() {
 	flag.IntVar(&targetPID, "pid", 0, "Process ID to monitor.")
 	flag.StringVar(&targetName, "name", "", "Search target process by name.")
 	flag.IntVar(&refreshPeriod, "period", refreshPeriod, "Data refresh period in milliseconds.")
+	flag.StringVar(&host.ProcFS, "procfs", host.ProcFS, "Root of the proc filesystem.")
 }
 
 func main() {

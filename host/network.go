@@ -172,7 +172,7 @@ func hexToIP(h string) net.IP {
 
 // Parse scans and retrieves the opened connections, from /proc/net/ files
 func parseNetworkForProtocol(proto string) ([]NetworkEntry, error) {
-	filename := fmt.Sprintf("/proc/net/%s", proto)
+	filename := fmt.Sprintf("%s/net/%s", ProcFS, proto)
 	fd, err := os.Open(filename)
 	if err != nil {
 		return nil, err

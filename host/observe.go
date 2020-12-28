@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+var ProcFS = "/proc"
+
 func Observe(pid int) (*State, error) {
 	var err error
 
@@ -21,7 +23,7 @@ func Observe(pid int) (*State, error) {
 			},
 		}
 
-		if state.procfs, err = procfs.NewDefaultFS(); err != nil {
+		if state.procfs, err = procfs.NewFS(ProcFS); err != nil {
 			return nil, err
 		}
 	} else {

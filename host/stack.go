@@ -25,7 +25,7 @@ var stackParser = regexp.MustCompile(`(?i)\[<([a-f0-9]+)>\]\s+(.+)\+0x([a-f0-9]+
 
 func parseProcessStack(pid int) (ProcessStack, error) {
 	stack := make(ProcessStack)
-	tasksPath := fmt.Sprintf("/proc/%d/task/", pid)
+	tasksPath := fmt.Sprintf("%s/%d/task/", ProcFS, pid)
 
 	err := fs.Glob(tasksPath, "*", func(taskPath string) error {
 		taskID := path.Base(taskPath)

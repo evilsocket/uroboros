@@ -109,7 +109,7 @@ func (v *FDView) setColumnSizes() {
 func resolveTargetFor(pid int, fd uintptr, state *host.State, numFiles *int, numSocks *int, numOther *int) (string, string, uint64) {
 	perms := ""
 	size := uint64(0)
-	path := fmt.Sprintf("/proc/%d/fd/%d", pid, fd)
+	path := fmt.Sprintf("%s/%d/fd/%d", host.ProcFS, pid, fd)
 	target, err := os.Readlink(path)
 	if err != nil {
 		target = path

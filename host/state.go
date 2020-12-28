@@ -25,7 +25,6 @@ type ProcessInfo struct {
 
 type State struct {
 	sync.Mutex
-	// tcpAndUdpParser
 	procfs procfs.FS
 	// when this state has been parsed
 	ObservedAt time.Time
