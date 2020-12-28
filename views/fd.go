@@ -2,6 +2,7 @@ package views
 
 import (
 	"fmt"
+	"github.com/dustin/go-humanize"
 	"github.com/evilsocket/uroboros/host"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
@@ -81,7 +82,7 @@ func NewFDView() *FDView {
 	v.table.RowSeparator = true
 	v.table.FillRow = true
 	v.table.Rows = [][]string{
-		{"", "", ""},
+		{"", "", "", "", ""},
 	}
 	v.table.ColumnResizer = v.setColumnSizes
 
@@ -105,7 +106,9 @@ func (v *FDView) setColumnSizes() {
 	autosizeTable(v.table)
 }
 
-func resolveTargetFor(pid int, fd uintptr, state *host.State, numFiles *int, numSocks *int, numOther *int) string {
+func resolveTargetFor(pid int, fd uintptr, state *host.State, numFiles *int, numSocks *int, numOther *int) (string, string, uint64) {
+	perms := ""
+	size := uint64(0)
 	path := fmt.Sprintf("/proc/%d/fd/%d", pid, fd)
 	target, err := os.Readlink(path)
 	if err != nil {
@@ -120,15 +123,19 @@ func resolveTargetFor(pid int, fd uintptr, state *host.State, numFiles *int, num
 		if entry, found := state.NetworkINodes[int(inode)]; found {
 			target = entry.String()
 		} else {
-			target = fmt.Sprintf("socket:[%d] (dead?)", inode)
+			target = fmt.Sprintf("socket:[%d]", inode)
 		}
 	} else if idx := strings.Index(target, ":["); idx >= 0 {
 		*numOther++
 	} else {
 		*numFiles++
+		if info, err := os.Stat(target); err == nil {
+			perms = info.Mode().String()
+			size = uint64(info.Size())
+		}
 	}
 
-	return target
+	return target, perms, size
 }
 
 func (v *FDView) Event(e ui.Event) {
@@ -167,10 +174,17 @@ func (v *FDView) Update(state *host.State) error {
 		}
 		sort.Strings(flags)
 
+		target, perms, size := resolveTargetFor(state.Process.PID, uintptr(fdNum), state, &numFiles, &numSocks, &numOther)
+		sizeStr := ""
+		if size > 0 {
+			sizeStr	= humanize.Bytes(size)
+		}
+
 		rows = append(rows, []string{
 			fmt.Sprintf(" %s", fdName),
-			fmt.Sprintf(" %s", resolveTargetFor(state.Process.PID, uintptr(fdNum), state, &numFiles, &numSocks,
-				&numOther)),
+			fmt.Sprintf(" %s", target),
+			fmt.Sprintf(" %s", perms),
+			fmt.Sprintf(" %s", sizeStr),
 			fmt.Sprintf(" 0x%s (%s)", state.Process.FDs[i].Flags, strings.Join(flags, ", ")),
 		})
 	}
@@ -193,7 +207,7 @@ func (v *FDView) Update(state *host.State) error {
 	}
 
 	v.table.Rows = [][]string{
-		{fmt.Sprintf(" number %s", scrollMsg), " target", " flags"},
+		{fmt.Sprintf(" number %s", scrollMsg), " target", " perms ", " size ", " flags"},
 	}
 
 	v.table.Rows = append(v.table.Rows, rows...)
