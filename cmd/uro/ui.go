@@ -33,7 +33,7 @@ func setupGrid() {
 	currTabView = getActiveTab()
 	currTabDrawable = currTabView.Render()
 
-	headRatio := 1.0 / 25
+	headRatio := 0.04
 
 	grid.Items = make([]*ui.GridItem, 0)
 	grid.Set(
