@@ -40,7 +40,7 @@ func (v *MEMView) Title() string {
 }
 
 func (v *MEMView) Update(state *host.State) error {
-	used := state.ProcessStat.RSS * state.PageSize
+	used := state.Process.Stat.RSS * state.PageSize
 	usedPerc := float64(used) / float64(state.Memory.MemTotal * 1024) * 100.0
 
 	if v.t >= pointsInTime {

@@ -86,7 +86,7 @@ func (v *MAPSView) Event(e ui.Event) {
 }
 
 func (v *MAPSView) Update(state *host.State) error {
-	rows := state.ProcessMaps
+	rows := state.Process.Maps
 	totRows := len(rows)
 	v.lastN = totRows
 	hasScroll, scrollMsg, from, to := tableSetScroll(v.table, totRows, v.cursor)

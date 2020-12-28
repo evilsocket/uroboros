@@ -25,8 +25,8 @@ type cpuHistory struct {
 func (h *cpuHistory) Set(state *host.State) {
 	h.Inited = true
 	h.At = state.ObservedAt
-	h.STime = state.ProcessStat.STime
-	h.UTime = state.ProcessStat.UTime
+	h.STime = state.Process.Stat.STime
+	h.UTime = state.Process.Stat.UTime
 }
 
 type CPUView struct {
@@ -63,8 +63,8 @@ func (v *CPUView) Update(state *host.State) error {
 		return nil
 	}
 
-	totalStime := float64(state.ProcessStat.STime - v.history.STime)
-	totalUtime := float64(state.ProcessStat.UTime - v.history.UTime)
+	totalStime := float64(state.Process.Stat.STime - v.history.STime)
+	totalUtime := float64(state.Process.Stat.UTime - v.history.UTime)
 	total := totalStime + totalUtime
 
 	total /= clockTicks

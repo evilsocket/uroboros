@@ -134,9 +134,9 @@ func (v *INFOView) setColumnSizes() {
 }
 
 func (v *INFOView) Update(state *host.State) error {
-	stat := state.ProcessStat
-	status := state.ProcessStatus
-	proc := state.Process
+	stat := state.Process.Stat
+	status := state.Process.Status
+	proc := state.Process.Process
 
 	startTimeSecs, err := stat.StartTime()
 	if err != nil {
@@ -202,8 +202,8 @@ func (v *INFOView) Update(state *host.State) error {
 	}
 
 	parent := ""
-	if state.ParentProcess != nil {
-		if parentCmd, err := state.ParentProcess.CmdLine(); err == nil {
+	if state.Process.Parent != nil {
+		if parentCmd, err := state.Process.Parent.CmdLine(); err == nil {
 			parent = fmt.Sprintf("%d (%s)", stat.PPID, strings.Join(parentCmd, " "))
 		}
 	}

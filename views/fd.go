@@ -145,13 +145,13 @@ func (v *FDView) Event(e ui.Event) {
 func (v *FDView) Update(state *host.State) error {
 	var rows [][]string
 
-	v.last = len(state.ProcessFDs)
+	v.last = len(state.Process.FDs)
 
 	numFiles := 0
 	numSocks := 0
 	numOther := 0
 
-	for i, info := range state.ProcessFDs {
+	for i, info := range state.Process.FDs {
 		fdNum, _ := strconv.ParseUint(info.FD, 10, 32)
 		fdName := info.FD
 		if known, found := fdKnown[uintptr(fdNum)]; found {
@@ -160,7 +160,7 @@ func (v *FDView) Update(state *host.State) error {
 
 		var flags []string
 		for mask, desc := range fdFlags {
-			flagsI, _ := strconv.ParseUint(state.ProcessFDs[i].Flags, 16, 64)
+			flagsI, _ := strconv.ParseUint(state.Process.FDs[i].Flags, 16, 64)
 			if flagsI&uint64(mask) == uint64(mask) {
 				flags = append(flags, desc)
 			}
@@ -169,8 +169,9 @@ func (v *FDView) Update(state *host.State) error {
 
 		rows = append(rows, []string{
 			fmt.Sprintf(" %s", fdName),
-			fmt.Sprintf(" %s", resolveTargetFor(state.PID, uintptr(fdNum), state, &numFiles, &numSocks, &numOther)),
-			fmt.Sprintf(" 0x%s (%s)", state.ProcessFDs[i].Flags, strings.Join(flags, ", ")),
+			fmt.Sprintf(" %s", resolveTargetFor(state.Process.PID, uintptr(fdNum), state, &numFiles, &numSocks,
+				&numOther)),
+			fmt.Sprintf(" 0x%s (%s)", state.Process.FDs[i].Flags, strings.Join(flags, ", ")),
 		})
 	}
 

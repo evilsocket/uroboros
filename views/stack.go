@@ -76,7 +76,7 @@ func (v *STACKView) setColumnSizes() {
 
 func (v *STACKView) Update(state *host.State) error {
 	sortedTaskIDS := make([]string, 0)
-	for taskID := range state.ProcessStack {
+	for taskID := range state.Process.Stack {
 		sortedTaskIDS = append(sortedTaskIDS, taskID)
 	}
 	sort.Strings(sortedTaskIDS)
@@ -90,7 +90,7 @@ func (v *STACKView) Update(state *host.State) error {
 
 	var rows [][]string
 
-	for _, entry := range state.ProcessStack[sortedTaskIDS[v.list.SelectedRow]] {
+	for _, entry := range state.Process.Stack[sortedTaskIDS[v.list.SelectedRow]] {
 		rows = append(rows, []string{
 			fmt.Sprintf(" 0x%08x", entry.Address),
 			fmt.Sprintf(" %s", entry.Function),

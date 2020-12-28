@@ -56,7 +56,7 @@ func (v *IOView) Title() string {
 }
 
 func (v *IOView) Update(state *host.State) error {
-	io, err := state.Process.IO()
+	io, err := state.Process.Process.IO()
 	if err != nil {
 		return err
 	}

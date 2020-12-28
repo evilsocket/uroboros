@@ -7,7 +7,20 @@ import (
 	"time"
 )
 
-var CurrentState *State
+var stateMutex = sync.Mutex{}
+var state *State
+
+type ProcessInfo struct {
+	PID        int
+	Parent     *procfs.Proc
+	ParentStat *procfs.ProcStat
+	Process    procfs.Proc
+	Stat       procfs.ProcStat
+	Status     procfs.ProcStatus
+	Maps       []*procfs.ProcMap
+	FDs        procfs.ProcFDInfos
+	Stack      ProcessStack
+}
 
 type State struct {
 	sync.Mutex
@@ -21,76 +34,70 @@ type State struct {
 	PageSize int
 	Stat     procfs.Stat
 	Memory   procfs.Meminfo
+
 	// process specific stats
-	PID               int
-	ParentProcess     *procfs.Proc
-	ParentProcessStat *procfs.ProcStat
-	Process           procfs.Proc
-	ProcessStat       procfs.ProcStat
-	ProcessStatus     procfs.ProcStatus
-	ProcessMaps       []*procfs.ProcMap
-	ProcessFDs        procfs.ProcFDInfos
-	ProcessStack      ProcessStack
+	Process ProcessInfo
 }
 
 func Observe(pid int) (*State, error) {
 	var err error
 
-	// TODO: refactor this shit
+	stateMutex.Lock()
+	defer stateMutex.Unlock()
 
-	if CurrentState == nil {
-		CurrentState = &State{
-			PID: pid,
+	if state == nil {
+		state = &State{
+			ObservedAt: time.Now(),
+			PageSize:   os.Getpagesize(),
+			Process: ProcessInfo{
+				PID: pid,
+			},
 		}
-		if CurrentState.procfs, err = procfs.NewDefaultFS(); err != nil {
+
+		if state.procfs, err = procfs.NewDefaultFS(); err != nil {
 			return nil, err
 		}
+	} else {
+		state.ObservedAt = time.Now()
 	}
 
-	CurrentState.Lock()
-	defer CurrentState.Unlock()
-
 	// gather host generic info first
-	CurrentState.ObservedAt = time.Now()
-	CurrentState.PageSize = os.Getpagesize()
-
-	if CurrentState.Stat, err = CurrentState.procfs.Stat(); err != nil {
+	if state.Stat, err = state.procfs.Stat(); err != nil {
 		return nil, err
-	} else if CurrentState.Memory, err = CurrentState.procfs.Meminfo(); err != nil {
+	} else if state.Memory, err = state.procfs.Meminfo(); err != nil {
 		return nil, err
 	}
 
 	// then gather the process specific info
-	CurrentState.PID = pid
-	if CurrentState.Process, err = CurrentState.procfs.Proc(pid); err != nil {
+	if state.Process.Process, err = state.procfs.Proc(pid); err != nil {
 		return nil, err
-	} else if CurrentState.ProcessStat, err = CurrentState.Process.Stat(); err != nil {
+	} else if state.Process.Stat, err = state.Process.Process.Stat(); err != nil {
 		return nil, err
-	} else if CurrentState.ProcessStatus, err = CurrentState.Process.NewStatus(); err != nil {
+	} else if state.Process.Status, err = state.Process.Process.NewStatus(); err != nil {
 		return nil, err
-	} else if CurrentState.ProcessMaps, err = CurrentState.Process.ProcMaps(); err != nil {
+	} else if state.Process.Maps, err = state.Process.Process.ProcMaps(); err != nil {
 		return nil, err
-	} else if CurrentState.ProcessFDs, err = CurrentState.Process.FileDescriptorsInfo(); err != nil {
+	} else if state.Process.FDs, err = state.Process.Process.FileDescriptorsInfo(); err != nil {
 		return nil, err
-	} else if CurrentState.ProcessStack, err = parseProcessStack(pid); err != nil {
+	} else if state.Process.Stack, err = parseProcessStack(pid); err != nil {
 		return nil, err
 	}
 
 	// and from its parent
-	if parent, err := CurrentState.procfs.Proc(CurrentState.ProcessStat.PPID); err == nil {
-		CurrentState.ParentProcess = &parent
-		if parentStats, err := CurrentState.ParentProcess.Stat(); err == nil {
-			CurrentState.ParentProcessStat = &parentStats
+	if parent, err := state.procfs.Proc(state.Process.Stat.PPID); err == nil {
+		state.Process.Parent = &parent
+		if parentStats, err := state.Process.Parent.Stat(); err == nil {
+			state.Process.ParentStat = &parentStats
 		} else {
-			CurrentState.ParentProcessStat = nil
+			state.Process.ParentStat = nil
 		}
 	} else {
-		CurrentState.ParentProcess = nil
+		state.Process.Parent = nil
 	}
 
-	if CurrentState.NetworkINodes, err = buildNetworkINodes(); err != nil {
+	if state.NetworkINodes, err = buildNetworkINodes(); err != nil {
 		return nil, err
 	}
 
-	return CurrentState, err
+	return state, err
 }
