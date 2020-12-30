@@ -7,6 +7,7 @@ import (
 )
 
 var ProcFS = "/proc"
+var TargetPID = 0
 
 func Observe(pid int) (*State, error) {
 	var err error
@@ -28,6 +29,7 @@ func Observe(pid int) (*State, error) {
 		}
 	} else {
 		state.ObservedAt = time.Now()
+		state.Process.PID = pid
 	}
 
 	// gather host generic info first
@@ -48,7 +50,7 @@ func Observe(pid int) (*State, error) {
 		return nil, err
 	} else if state.Process.FDs, err = state.Process.Process.FileDescriptorsInfo(); err != nil {
 		return nil, err
-	} else if state.Process.Stack, err = parseProcessStack(pid); err != nil {
+	} else if state.Process.Tasks, err = parseProcessTasks(pid); err != nil {
 		return nil, err
 	}
 

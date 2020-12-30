@@ -20,7 +20,8 @@ type ProcessInfo struct {
 	Status  procfs.ProcStatus
 	Maps    []*procfs.ProcMap
 	FDs     procfs.ProcFDInfos
-	Stack   ProcessStack
+
+	Tasks []Task
 }
 
 type State struct {

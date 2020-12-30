@@ -30,9 +30,11 @@ func setupUI(pid int) error {
 		return err
 	}
 
-	grid = ui.NewGrid()
 	termWidth, termHeight := ui.TerminalDimensions()
+
+	grid = ui.NewGrid()
 	grid.SetRect(0, 0, termWidth, termHeight)
+	grid.Border = false
 
 	for _, id := range str.Comma(tabIDS) {
 		if view := views.ByName(id); view == nil {
@@ -51,6 +53,7 @@ func setupUI(pid int) error {
 	}
 
 	tabs = widgets.NewTabPane(tabTitles...)
+	tabs.Border = false
 
 	return nil
 }
@@ -69,7 +72,7 @@ func getActiveTab() views.View {
 
 func updateUI() {
 	drawable := getActiveTab().Drawable()
-	headRatio := 0.04
+	headRatio := 1./50
 
 	grid.Items = make([]*ui.GridItem, 0)
 	grid.Set(
@@ -85,7 +88,7 @@ func updateUI() {
 }
 
 func updateTabs() {
-	if state, err := host.Observe(targetPID); err != nil {
+	if state, err := host.Observe(host.TargetPID); err != nil {
 		fatal("%v\n", err)
 	} else {
 		for i, tab := range tabViews {

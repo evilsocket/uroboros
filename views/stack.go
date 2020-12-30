@@ -6,7 +6,6 @@ import (
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"io/ioutil"
-	"sort"
 )
 
 func init() {
@@ -82,28 +81,31 @@ func (v *STACKView) setColumnSizes() {
 }
 
 func (v *STACKView) Update(state *host.State) error {
-	sortedTaskIDS := make([]string, 0)
-	for taskID := range state.Process.Stack {
-		sortedTaskIDS = append(sortedTaskIDS, taskID)
-	}
-	sort.Strings(sortedTaskIDS)
-
-	v.list.Rows = make([]string, len(sortedTaskIDS))
-	for i, taskID := range sortedTaskIDS {
-		v.list.Rows[i] = fmt.Sprintf(" %s ", taskID)
+	v.list.Rows = make([]string, len(state.Process.Tasks))
+	for i, t := range state.Process.Tasks {
+		if t.ID == host.TargetPID {
+			v.list.Rows[i] = fmt.Sprintf(" %s ", t.IDStr)
+		} else {
+			v.list.Rows[i] = fmt.Sprintf("   %s ", t.IDStr)
+		}
 	}
 
 	prevRows := v.table.Rows
 
 	var rows [][]string
 
-	for _, entry := range state.Process.Stack[sortedTaskIDS[v.list.SelectedRow]] {
-		rows = append(rows, []string{
-			fmt.Sprintf(" 0x%08x", entry.Address),
-			fmt.Sprintf(" %s", entry.Function),
-			fmt.Sprintf(" 0x%x", entry.Offset),
-			fmt.Sprintf(" %d", entry.Size),
-		})
+	for i, task := range state.Process.Tasks {
+		if i == v.list.SelectedRow {
+			for _, entry := range task.Stack {
+				rows = append(rows, []string{
+					fmt.Sprintf(" 0x%08x", entry.Address),
+					fmt.Sprintf(" %s", entry.Function),
+					fmt.Sprintf(" 0x%x", entry.Offset),
+					fmt.Sprintf(" %d", entry.Size),
+				})
+			}
+			break
+		}
 	}
 
 	for i, row := range prevRows {

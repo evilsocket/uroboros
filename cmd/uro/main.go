@@ -11,13 +11,12 @@ import (
 	"time"
 )
 
-var targetPID = 0
 var targetName = ""
 var refreshPeriod = 500
 
 func init() {
-	flag.IntVar(&targetPID, "pid", 0, "Process ID to monitor.")
-	flag.StringVar(&targetName, "name", "", "Search target process by name.")
+	flag.IntVar(&host.TargetPID, "pid", 0, "Process ID to monitor.")
+	flag.StringVar(&targetName, "search", "", "Search target process by name.")
 	flag.IntVar(&refreshPeriod, "period", refreshPeriod, "Data refresh period in milliseconds.")
 	flag.StringVar(&host.ProcFS, "procfs", host.ProcFS, "Root of the proc filesystem.")
 	flag.StringVar(&tabIDS, "tabs", tabIDS, "Comma separated list of tab names to show.")
@@ -46,15 +45,15 @@ func searchTarget() {
 				os.Exit(0)
 			} else {
 				for pid := range matches {
-					targetPID = pid
+					host.TargetPID = pid
 					return
 				}
 			}
 		}
 	}
 
-	if targetPID <= 0 {
-		targetPID = os.Getpid()
+	if host.TargetPID <= 0 {
+		host.TargetPID = os.Getpid()
 	}
 }
 
@@ -63,7 +62,7 @@ func main() {
 
 	searchTarget()
 
-	if err := setupUI(targetPID); err != nil {
+	if err := setupUI(host.TargetPID); err != nil {
 		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}

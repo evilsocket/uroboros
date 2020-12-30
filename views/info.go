@@ -92,16 +92,26 @@ func init() {
 }
 
 type INFOView struct {
-	table *widgets.Table
+	tree   *widgets.Tree
+	table  *widgets.Table
+	grid   *ui.Grid
 	cursor int
-	pid   int
-	name  string
+	pid    int
+	name   string
+	parent string
 }
 
 func NewINFOView() *INFOView {
 	v := INFOView{
+		tree:  widgets.NewTree(),
 		table: widgets.NewTable(),
+		grid:  ui.NewGrid(),
 	}
+
+	v.tree.Title = "j/k/Enter"
+	v.tree.WrapText = false
+	v.tree.SelectedRow = 1
+	v.tree.SelectedRowStyle = ui.NewStyle(ui.ColorYellow, ui.ColorBlack, ui.ModifierBold)
 
 	v.table.TextStyle = ui.NewStyle(ui.ColorWhite)
 	v.table.RowSeparator = true
@@ -111,11 +121,29 @@ func NewINFOView() *INFOView {
 	}
 	v.table.ColumnResizer = v.setColumnSizes
 
+	v.grid.Set(
+		ui.NewRow(1.,
+			ui.NewCol(1./5, v.tree),
+			ui.NewCol(1.0-1./5, v.table),
+		),
+	)
+
 	return &v
 }
 
 func (v *INFOView) Event(e ui.Event) {
 	switch e.ID {
+	case "j":
+		v.tree.ScrollDown()
+	case "k":
+		v.tree.ScrollUp()
+	case "<Enter>":
+		if selected := v.tree.SelectedNode(); selected != nil {
+			if n := selected.Value.(node); n.PID != 0 && n.PID != host.TargetPID {
+				host.TargetPID = n.PID
+			}
+		}
+
 	case "<Up>":
 		if v.cursor > 0 {
 			v.cursor--
@@ -137,7 +165,51 @@ func (v *INFOView) setColumnSizes() {
 	autosizeTable(v.table)
 }
 
-func (v *INFOView) Update(state *host.State) error {
+type node struct {
+	PID  int
+	Name string
+}
+
+func (n node) String() string {
+	return n.Name
+}
+
+func (v *INFOView) updateTree(state *host.State) error {
+	var main host.Task
+	for _, task := range state.Process.Tasks {
+		if task.ID == host.TargetPID {
+			main = task
+			break
+		}
+	}
+
+	nodes := []*widgets.TreeNode{
+		{
+			Value: node{state.Process.Stat.PPID, v.parent},
+			Nodes: []*widgets.TreeNode{
+				{
+					Value: node{main.ID, main.String()},
+					Nodes: []*widgets.TreeNode{},
+				},
+			},
+		},
+	}
+
+	for _, task := range state.Process.Tasks {
+		if task.ID != host.TargetPID {
+			nodes[0].Nodes[0].Nodes = append(nodes[0].Nodes[0].Nodes, &widgets.TreeNode{
+				Value: node{task.ID, task.String()},
+			})
+		}
+	}
+
+	v.tree.SetNodes(nodes)
+	v.tree.ExpandAll()
+
+	return nil
+}
+
+func (v *INFOView) updateInfo(state *host.State) error {
 	stat := state.Process.Stat
 	status := state.Process.Status
 	proc := state.Process.Process
@@ -205,22 +277,12 @@ func (v *INFOView) Update(state *host.State) error {
 		}
 	}
 
-	parent := ""
-	if state.Process.Parent != nil {
-		if parentCmd, err := state.Process.Parent.CmdLine(); err == nil {
-			parent = fmt.Sprintf("%d (%s)", stat.PPID, strings.Join(parentCmd, " "))
-		}
-	}
-	if parent == "" {
-		parent = fmt.Sprintf("%d", stat.PPID)
-	}
-
 	prevRows := v.table.Rows
 
 	rows := [][]string{
 		{" Start Time", fmt.Sprintf(" %s", startTime)},
 		{" Running Time", fmt.Sprintf(" %s", time.Since(startTime))},
-		{" Parent", fmt.Sprintf(" %s", parent)},
+		{" Parent", fmt.Sprintf(" %s", v.parent)},
 		{" PID", fmt.Sprintf(" %d", stat.PID)},
 		{" Thread group ID", fmt.Sprintf(" %d", status.TGID)},
 		{" User", fmt.Sprintf(" %s", strings.Join(users, " | "))},
@@ -274,6 +336,25 @@ func (v *INFOView) Update(state *host.State) error {
 	return nil
 }
 
+func (v *INFOView) Update(state *host.State) error {
+	stat := state.Process.Stat
+	if state.Process.Parent != nil {
+		if parentCmd, err := state.Process.Parent.Comm(); err == nil {
+			v.parent = fmt.Sprintf("(%d) %s", stat.PPID, parentCmd)
+		}
+	}
+	if v.parent == "" {
+		v.parent = fmt.Sprintf("(%d)", stat.PPID)
+	}
+
+	if err := v.updateTree(state); err != nil {
+		return err
+	} else if err = v.updateInfo(state); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (v *INFOView) Drawable() ui.Drawable {
-	return v.table
+	return v.grid
 }
