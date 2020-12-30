@@ -13,7 +13,8 @@ runtime information in the terminal, without affecting the process performances 
 solutions 
 would do.
 
-<iframe src="https://www.youtube.com/embed/Kxl5F5yHi3E" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[![click here for a video](https://img.youtube.com/vi/Kxl5F5yHi3E/0.jpg)](https://www.youtube.com/watch?
+v=Kxl5F5yHi3E)
 
 ## Usage
 
