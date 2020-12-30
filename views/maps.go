@@ -41,6 +41,10 @@ func (v *MAPSView) Title() string {
 	return fmt.Sprintf("maps %d", v.lastN)
 }
 
+func (v *MAPSView) AvailableFor(pid int) bool {
+	return true
+}
+
 func (v *MAPSView) setColumnSizes() {
 	autosizeTable(v.table)
 }
@@ -118,6 +122,6 @@ func (v *MAPSView) Update(state *host.State) error {
 	return nil
 }
 
-func (v *MAPSView) Render() ui.Drawable {
+func (v *MAPSView) Drawable() ui.Drawable {
 	return v.table
 }

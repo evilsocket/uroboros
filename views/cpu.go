@@ -48,6 +48,10 @@ func NewCPUView() *CPUView {
 	return &v
 }
 
+func (v *CPUView) AvailableFor(pid int) bool {
+	return true
+}
+
 func (v *CPUView) Event(e ui.Event) {
 
 }
@@ -85,6 +89,9 @@ func (v *CPUView) Update(state *host.State) error {
 	return nil
 }
 
-func (v *CPUView) Render() ui.Drawable {
-	return v.plot
+func (v *CPUView) Drawable() ui.Drawable {
+	if len(v.plot.Data[0]) >= 2 {
+		return v.plot
+	}
+	return empty
 }

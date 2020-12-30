@@ -64,9 +64,14 @@ func stressMEM() {
 
 func main() {
 	router.Mount("/debug", middleware.Profiler())
+	router.Get("/slow", func(writer http.ResponseWriter, request *http.Request) {
+		time.Sleep(50 * time.Millisecond)
+		writer.WriteHeader(http.StatusOK)
+		writer.Write([]byte("ok"))
+	})
 
 	go func() {
-		fmt.Println("/debug api on :8080\n")
+		fmt.Println("/debug and /slow api on :8080\n")
 		panic(http.ListenAndServe("0.0.0.0:8080", router))
 	}()
 

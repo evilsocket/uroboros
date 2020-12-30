@@ -51,6 +51,10 @@ func (v *IOView) Event(e ui.Event) {
 
 }
 
+func (v *IOView) AvailableFor(pid int) bool {
+	return true
+}
+
 func (v *IOView) Title() string {
 	return "i/o"
 }
@@ -83,6 +87,9 @@ func (v *IOView) Update(state *host.State) error {
 	return nil
 }
 
-func (v *IOView) Render() ui.Drawable {
-	return v.grid
+func (v *IOView) Drawable() ui.Drawable {
+	if len(v.char.Data[0]) >= 2 {
+		return v.grid
+	}
+	return empty
 }

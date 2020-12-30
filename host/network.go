@@ -37,7 +37,7 @@ var sockStates = map[uint]string{
 	TCP_CLOSE:        "CLOSE",
 	TCP_CLOSE_WAIT:   "CLOSE_WAIT",
 	TCP_LAST_ACK:     "LAST_ACK",
-	TCP_LISTEN:       "LISTEN",
+	TCP_LISTEN:       "LISTENING",
 	TCP_CLOSING:      "CLOSING",
 	TCP_NEW_SYN_RECV: "NEW_SYN_RECV",
 }
@@ -81,12 +81,23 @@ type NetworkEntry struct {
 func (e NetworkEntry) String() string {
 	if e.Proto == "unix" {
 		return fmt.Sprintf("(%s) %s path='%s'", e.Proto, e.TypeString, e.Path)
-
 	} else if e.State == TCP_LISTEN {
-		return fmt.Sprintf("(%s) %s:%d LISTENING", e.Proto, e.SrcIP, e.SrcPort)
+		return fmt.Sprintf("(%s) %s:%d", e.Proto, e.SrcIP, e.SrcPort)
 	}
+	return fmt.Sprintf("(%s) %s:%d <-> %s:%d", e.Proto, e.SrcIP, e.SrcPort, e.DstIP, e.DstPort)
+}
 
-	return fmt.Sprintf("(%s) %s:%d <-> %s:%d %s", e.Proto, e.SrcIP, e.SrcPort, e.DstIP, e.DstPort, e.StateString)
+func (e NetworkEntry) InfoString() string {
+	if e.Proto == "unix" {
+		if e.Path != "" {
+			if info, err := os.Stat(e.Path); err == nil {
+				return info.Mode().String()
+			}
+		}
+	} else {
+		return e.StateString
+	}
+	return ""
 }
 
 var (

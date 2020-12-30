@@ -7,13 +7,16 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 )
 
+var empty = ui.NewCanvas()
+
 var registered = map[string]View{}
 
 type View interface {
+	AvailableFor(pid int) bool
 	Update(state *host.State) error
 	Title() string
 	Event(e ui.Event)
-	Render() ui.Drawable
+	Drawable() ui.Drawable
 }
 
 func ByName(name string) View {

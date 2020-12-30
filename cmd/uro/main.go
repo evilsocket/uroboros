@@ -4,9 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/evilsocket/uroboros/host"
-	"github.com/evilsocket/uroboros/views"
 	ui "github.com/gizak/termui/v3"
-	"github.com/gizak/termui/v3/widgets"
 	"github.com/prometheus/procfs"
 	"os"
 	"strings"
@@ -22,13 +20,10 @@ func init() {
 	flag.StringVar(&targetName, "name", "", "Search target process by name.")
 	flag.IntVar(&refreshPeriod, "period", refreshPeriod, "Data refresh period in milliseconds.")
 	flag.StringVar(&host.ProcFS, "procfs", host.ProcFS, "Root of the proc filesystem.")
+	flag.StringVar(&tabIDS, "tabs", tabIDS, "Comma separated list of tab names to show.")
 }
 
-func main() {
-	flag.Parse()
-
-	// TODO: handle errors with something better than a panic(err)
-
+func searchTarget() {
 	if targetName != "" {
 		if procs, err := procfs.AllProcs(); err !=  nil {
 			panic(err)
@@ -42,17 +37,17 @@ func main() {
 
 			if num := len(matches); num == 0 {
 				fmt.Printf("no matches for '%s'\n", targetName)
-				return
+				os.Exit(1)
 			} else if num > 1 {
 				fmt.Printf("multiple matches for '%s':\n", targetName)
 				for pid, comm := range matches {
 					fmt.Printf("[%d] %s\n", pid, comm)
 				}
-				return
+				os.Exit(0)
 			} else {
 				for pid := range matches {
 					targetPID = pid
-					break
+					return
 				}
 			}
 		}
@@ -61,37 +56,33 @@ func main() {
 	if targetPID <= 0 {
 		targetPID = os.Getpid()
 	}
+}
 
-	if err := ui.Init(); err != nil {
-		panic(err)
-	}
-	defer ui.Close()
+func main() {
+	flag.Parse()
 
-	grid = ui.NewGrid()
-	termWidth, termHeight := ui.TerminalDimensions()
-	grid.SetRect(0, 0, termWidth, termHeight)
+	searchTarget()
 
-	tabTitles = make([]string, numTabViews)
-	for i, name := range tabIDs {
-		v := views.ByName(name)
-		tabViews = append(tabViews, v)
-		tabTitles[i] = v.Title()
+	if err := setupUI(targetPID); err != nil {
+		fmt.Printf("%v\n", err)
+		os.Exit(1)
 	}
 
-	tabs = widgets.NewTabPane(tabTitles...)
+	// most tabs need at least two data points to correctly render
+	for i := 0; i < 2; i++ {
+		updateTabs()
+	}
 
-	updateAllTabs()
-	setupGrid()
+	updateUI()
 
-	ui.Render(grid)
+	defer closeUI()
 
 	uiEvents := ui.PollEvents()
 	ticker := time.NewTicker(time.Millisecond * time.Duration(refreshPeriod)).C
-
 	for {
 		select {
 		case <-ticker:
-			updateAllTabs()
+			updateTabs()
 
 		case e := <-uiEvents:
 			switch e.ID {
@@ -110,8 +101,6 @@ func main() {
 			getActiveTab().Event(e)
 		}
 
-		setupGrid()
-		ui.Clear()
-		ui.Render(grid)
+		updateUI()
 	}
 }

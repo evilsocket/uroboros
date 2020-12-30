@@ -31,6 +31,10 @@ func NewMEMView() *MEMView {
 	return &v
 }
 
+func (v *MEMView) AvailableFor(pid int) bool {
+	return true
+}
+
 func (v *MEMView) Event(e ui.Event) {
 
 }
@@ -57,6 +61,6 @@ func (v *MEMView) Update(state *host.State) error {
 	return nil
 }
 
-func (v *MEMView) Render() ui.Drawable {
+func (v *MEMView) Drawable() ui.Drawable {
 	return v.plot
 }

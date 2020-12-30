@@ -82,7 +82,7 @@ func NewFDView() *FDView {
 	v.table.RowSeparator = true
 	v.table.FillRow = true
 	v.table.Rows = [][]string{
-		{"", "", ""},
+		{"", "", "", ""},
 	}
 	v.table.ColumnResizer = v.setColumnSizes
 
@@ -98,6 +98,10 @@ func NewFDView() *FDView {
 	return &v
 }
 
+func (v *FDView) AvailableFor(pid int) bool {
+	return true
+}
+
 func (v *FDView) Title() string {
 	return fmt.Sprintf("fds %d", v.last)
 }
@@ -106,11 +110,10 @@ func (v *FDView) setColumnSizes() {
 	autosizeTable(v.table)
 }
 
-func resolveTargetFor(pid int, fd uintptr, state *host.State, numFiles *int, numSocks *int, numOther *int) (string, string, uint64) {
-	perms := ""
-	size := uint64(0)
+func resolveTargetFor(pid int, fd uintptr, state *host.State, numFiles *int, numSocks *int, numOther *int) (string, string) {
 	path := fmt.Sprintf("%s/%d/fd/%d", host.ProcFS, pid, fd)
 	target, err := os.Readlink(path)
+	targetInfo := ""
 	if err != nil {
 		target = path
 	}
@@ -122,6 +125,7 @@ func resolveTargetFor(pid int, fd uintptr, state *host.State, numFiles *int, num
 		inode, _ := strconv.ParseInt(inodeStr, 10, 64)
 		if entry, found := state.NetworkINodes[int(inode)]; found {
 			target = entry.String()
+			targetInfo = entry.InfoString()
 		} else {
 			target = fmt.Sprintf("socket:[%d]", inode)
 		}
@@ -130,12 +134,14 @@ func resolveTargetFor(pid int, fd uintptr, state *host.State, numFiles *int, num
 	} else {
 		*numFiles++
 		if info, err := os.Stat(target); err == nil {
-			perms = info.Mode().String()
-			size = uint64(info.Size())
+			targetInfo = info.Mode().String()
+			if sz := uint64(info.Size()); sz > 0 {
+				targetInfo += " " + humanize.Bytes(sz)
+			}
 		}
 	}
 
-	return target, perms, size
+	return target, targetInfo
 }
 
 func (v *FDView) Event(e ui.Event) {
@@ -174,15 +180,11 @@ func (v *FDView) Update(state *host.State) error {
 		}
 		sort.Strings(flags)
 
-		target, perms, size := resolveTargetFor(state.Process.PID, uintptr(fdNum), state, &numFiles, &numSocks, &numOther)
-		sizeStr := ""
-		if size > 0 {
-			sizeStr	= humanize.Bytes(size)
-		}
-
+		target, targetInfo := resolveTargetFor(state.Process.PID, uintptr(fdNum), state, &numFiles, &numSocks, &numOther)
 		rows = append(rows, []string{
 			fmt.Sprintf(" %s", fdName),
-			fmt.Sprintf(" %s %s %s", target, perms, sizeStr),
+			fmt.Sprintf(" %s", target),
+			fmt.Sprintf(" %s", targetInfo),
 			fmt.Sprintf(" 0x%s (%s)", state.Process.FDs[i].Flags, strings.Join(flags, ", ")),
 		})
 	}
@@ -205,7 +207,7 @@ func (v *FDView) Update(state *host.State) error {
 	}
 
 	v.table.Rows = [][]string{
-		{fmt.Sprintf(" number %s", scrollMsg), " target", " flags"},
+		{fmt.Sprintf(" number %s", scrollMsg), " target", " info", " flags"},
 	}
 
 	v.table.Rows = append(v.table.Rows, rows...)
@@ -213,6 +215,9 @@ func (v *FDView) Update(state *host.State) error {
 	return nil
 }
 
-func (v *FDView) Render() ui.Drawable {
-	return v.grid
+func (v *FDView) Drawable() ui.Drawable {
+	if len(v.plot.Data[0]) >= 2 {
+		return v.grid
+	}
+	return empty
 }

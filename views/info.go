@@ -125,8 +125,12 @@ func (v *INFOView) Event(e ui.Event) {
 	}
 }
 
+func (v *INFOView) AvailableFor(pid int) bool {
+	return true
+}
+
 func (v *INFOView) Title() string {
-	return fmt.Sprintf(" (%d) %s", v.pid, v.name)
+	return fmt.Sprintf("(%d) %s", v.pid, v.name)
 }
 
 func (v *INFOView) setColumnSizes() {
@@ -270,6 +274,6 @@ func (v *INFOView) Update(state *host.State) error {
 	return nil
 }
 
-func (v *INFOView) Render() ui.Drawable {
+func (v *INFOView) Drawable() ui.Drawable {
 	return v.table
 }

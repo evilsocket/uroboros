@@ -5,6 +5,7 @@ import (
 	"github.com/evilsocket/uroboros/host"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
+	"io/ioutil"
 	"sort"
 )
 
@@ -70,6 +71,12 @@ func (v *STACKView) Title() string {
 	return "stack"
 }
 
+func (v *STACKView) AvailableFor(pid int) bool {
+	path := fmt.Sprintf("%s/%d/stack", host.ProcFS, pid)
+	data, err := ioutil.ReadFile(path)
+	return err == nil && len(data) > 0
+}
+
 func (v *STACKView) setColumnSizes() {
 	autosizeTable(v.table)
 }
@@ -129,6 +136,6 @@ func (v *STACKView) Update(state *host.State) error {
 	return nil
 }
 
-func (v *STACKView) Render() ui.Drawable {
+func (v *STACKView) Drawable() ui.Drawable {
 	return v.grid
 }
