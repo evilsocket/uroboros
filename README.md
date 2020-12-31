@@ -48,7 +48,7 @@ For more options:
 * Left and right arrows to navigate tabs.
 * Up and down arrows to scroll tables.
 * `j` and `k` to navigate lists, enter to select an element.
-* In replay mode, use `p` to pause, `f` to fast forward.
+* Use `p` to pause, `f` to fast forward in replay mode.
 * Use `q` or `C-c` to quit.
 
 ## License

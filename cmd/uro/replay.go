@@ -23,9 +23,11 @@ func decorateFirstTab(title string) string {
 		}
 	} else if player != nil {
 		left = fmt.Sprintf(" [play %d%%] ", int(player.Progress()))
-		if paused {
-			left = " [pause] "
-		}
 	}
+
+	if paused && recorder == nil {
+		left = " [pause] "
+	}
+
 	return left + title
 }
