@@ -36,7 +36,7 @@ func NewMEMView() *MEMView {
 	v.virt.AxesColor = ui.ColorWhite
 	v.virt.LineColors = []ui.Color{ui.ColorGreen}
 	v.virt.Data = make([][]float64, 1)
-	v.virt.Data[0] = []float64{100.0}
+	v.virt.Data[0] = []float64{0.0}
 
 	v.grid.Set(
 		ui.NewRow(1.0/2,
@@ -70,7 +70,7 @@ func (v *MEMView) Update(state *host.State) error {
 	if v.t >= pointsInTime(v.rss) {
 		v.t = 0
 		v.rss.Data[0] = []float64{100.0}
-		v.virt.Data[0] = []float64{100.0}
+		v.virt.Data[0] = []float64{0.0}
 	}
 
 	v.rss.Title = fmt.Sprintf(" resident memory - %s of %s (%.1f%%) ", humanize.Bytes(uint64(used)),
