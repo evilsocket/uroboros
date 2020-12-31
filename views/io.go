@@ -6,6 +6,7 @@ import (
 	"github.com/evilsocket/uroboros/host"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
+	"time"
 )
 
 func init() {
@@ -14,25 +15,30 @@ func init() {
 
 type IOView struct {
 	t     int
+
+	prevRChar uint64
+	prevWChar uint64
+	prevTime time.Time
+
+	speed *widgets.Plot
 	char  *widgets.Plot
-	sysc  *widgets.Plot
 	bytes *widgets.Plot
 	grid  *ui.Grid
 }
 
 func NewIOView() *IOView {
-	char := makeNLinesPlot(" chars ", 2)
-	sysc := makeNLinesPlot(" syscalls ", 2)
-	bytes := makeNLinesPlot(" bytes ", 2)
+	char := makeNLinesPlot(" total ", 2)
+	speed := makeNLinesPlot(" speed ", 2)
+	bytes := makeNLinesPlot(" storage ", 2)
 
 	grid := ui.NewGrid()
 
 	grid.Set(
 		ui.NewRow(1.0/3,
-			ui.NewCol(1.0, char),
+			ui.NewCol(1.0, speed),
 		),
 		ui.NewRow(1.0/3,
-			ui.NewCol(1.0, sysc),
+			ui.NewCol(1.0, char),
 		),
 		ui.NewRow(1.0/3,
 			ui.NewCol(1.0, bytes),
@@ -41,7 +47,7 @@ func NewIOView() *IOView {
 
 	return &IOView{
 		char:  char,
-		sysc:  sysc,
+		speed: speed,
 		bytes: bytes,
 		grid:  grid,
 	}
@@ -67,19 +73,26 @@ func (v *IOView) Update(state *host.State) error {
 
 	io := state.Process.IO
 
+	perSec := 1. / state.ObservedAt.Sub(v.prevTime).Seconds()
+	readSpeed := float64(io.RChar - v.prevRChar) * perSec
+	writeSpeed := float64(io.WChar - v.prevWChar) * perSec
+
+	updateNLinesPlot(v.speed, doReset,
+		[]float64{readSpeed, writeSpeed},
+		fmt.Sprintf(" speed (r:%s/s w:%s/s) ", humanize.Bytes(uint64(readSpeed)), humanize.Bytes(uint64(writeSpeed))))
+
 	updateNLinesPlot(v.char, doReset,
 		[]float64{float64(io.RChar), float64(io.WChar)},
-		fmt.Sprintf(" chars (r:%d w:%d) ", io.RChar, io.WChar))
-
-	updateNLinesPlot(v.sysc, doReset,
-		[]float64{float64(io.SyscR), float64(io.SyscW)},
-		fmt.Sprintf(" syscalls (r:%d w:%d) ", io.SyscR, io.SyscW))
+		fmt.Sprintf(" total (r:%s w:%s) ", humanize.Bytes(io.RChar), humanize.Bytes(io.WChar)))
 
 	updateNLinesPlot(v.bytes, doReset,
 		[]float64{float64(io.ReadBytes), float64(io.WriteBytes)},
-		fmt.Sprintf(" bytes (r:%s w:%s) ", humanize.Bytes(io.ReadBytes), humanize.Bytes(io.WriteBytes)))
+		fmt.Sprintf(" storage (r:%s w:%s) ", humanize.Bytes(io.ReadBytes), humanize.Bytes(io.WriteBytes)))
 
 	v.t++
+	v.prevRChar = io.RChar
+	v.prevWChar = io.WChar
+	v.prevTime = state.ObservedAt
 
 	return nil
 }
