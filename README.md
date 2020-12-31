@@ -13,7 +13,7 @@ runtime information in the terminal, without affecting the process performances 
 solutions 
 would do.
 
-[![click here for a video](https://img.youtube.com/vi/Kxl5F5yHi3E/0.jpg)](https://www.youtube.com/watch?v=Kxl5F5yHi3E)
+[![click here for a video](https://asciinema.org/a/382003.png)](https://asciinema.org/a/382003)
 
 ## Usage
 
