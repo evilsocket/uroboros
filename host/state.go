@@ -9,20 +9,6 @@ import (
 var stateMutex = sync.Mutex{}
 var state *State
 
-type ProcessInfo struct {
-	PID int
-
-	Parent     *procfs.Proc
-	ParentStat *procfs.ProcStat
-
-	Process procfs.Proc
-	Stat    procfs.ProcStat
-	Status  procfs.ProcStatus
-	Maps    []*procfs.ProcMap
-	FDs     procfs.ProcFDInfos
-
-	Tasks []Task
-}
 
 type State struct {
 	sync.Mutex
@@ -36,5 +22,5 @@ type State struct {
 	Stat     procfs.Stat
 	Memory   procfs.Meminfo
 	// process specific stats
-	Process ProcessInfo
+	Process Process
 }

@@ -19,9 +19,6 @@ func Observe(pid int) (*State, error) {
 		state = &State{
 			ObservedAt: time.Now(),
 			PageSize:   os.Getpagesize(),
-			Process: ProcessInfo{
-				PID: pid,
-			},
 		}
 
 		if state.procfs, err = procfs.NewFS(ProcFS); err != nil {
@@ -29,7 +26,6 @@ func Observe(pid int) (*State, error) {
 		}
 	} else {
 		state.ObservedAt = time.Now()
-		state.Process.PID = pid
 	}
 
 	// gather host generic info first
@@ -40,34 +36,22 @@ func Observe(pid int) (*State, error) {
 	}
 
 	// then gather the process specific info
-	if state.Process.Process, err = state.procfs.Proc(pid); err != nil {
-		return nil, err
-	} else if state.Process.Stat, err = state.Process.Process.Stat(); err != nil {
-		return nil, err
-	} else if state.Process.Status, err = state.Process.Process.NewStatus(); err != nil {
-		return nil, err
-	} else if state.Process.Maps, err = state.Process.Process.ProcMaps(); err != nil {
-		return nil, err
-	} else if state.Process.FDs, err = state.Process.Process.FileDescriptorsInfo(); err != nil {
-		return nil, err
-	} else if state.Process.Tasks, err = parseProcessTasks(pid); err != nil {
+	if state.Process, err = parseProcess(pid, state.procfs); err != nil {
 		return nil, err
 	}
 
-	// and from its parent
-	if parent, err := state.procfs.Proc(state.Process.Stat.PPID); err == nil {
-		state.Process.Parent = &parent
-		if parentStats, err := state.Process.Parent.Stat(); err == nil {
-			state.Process.ParentStat = &parentStats
+	// used to lookup fds/inodes
+	if state.NetworkINodes, err = parseNetworkInodes(); err != nil {
+		return nil, err
+	}
+
+	// lookup descriptors detailed info
+	for _, fd := range state.Process.FDs {
+		if info, err := resolveDescriptor(state, pid, fd.FD); err != nil {
+			return nil, err
 		} else {
-			state.Process.ParentStat = nil
+			state.Process.FDInfos[fd.FD] = info
 		}
-	} else {
-		state.Process.Parent = nil
-	}
-
-	if state.NetworkINodes, err = buildNetworkINodes(); err != nil {
-		return nil, err
 	}
 
 	return state, err

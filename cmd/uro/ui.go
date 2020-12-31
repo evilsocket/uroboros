@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/uroboros/host"
+	"github.com/evilsocket/uroboros/record"
 	"github.com/evilsocket/uroboros/views"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
@@ -18,6 +19,8 @@ var tabViews []views.View
 
 var grid *ui.Grid
 var tabs *widgets.TabPane
+
+var t = 0
 
 func fatal(format string, a ...interface{}) {
 	closeUI()
@@ -60,6 +63,15 @@ func setupUI(pid int) error {
 
 func closeUI() {
 	ui.Close()
+
+	if rec != nil {
+		fmt.Printf("saving session to %s ...\n", recordFile)
+		if err = rec.Save(recordFile); err != nil {
+			panic(err)
+		}
+	} else if rep != nil {
+		fmt.Printf("%s over.\n", replayFile)
+	}
 }
 
 func getActiveTab() views.View {
@@ -72,7 +84,7 @@ func getActiveTab() views.View {
 
 func updateUI() {
 	drawable := getActiveTab().Drawable()
-	headRatio := 1./50
+	headRatio := 1. / 50
 
 	grid.Items = make([]*ui.GridItem, 0)
 	grid.Set(
@@ -88,19 +100,56 @@ func updateUI() {
 }
 
 func updateTabs() {
-	if state, err := host.Observe(host.TargetPID); err != nil {
+	var tmp host.State
+	var state *host.State
+
+	if rep != nil {
+		if err = rep.Next(&tmp); err == record.EOF {
+			closeUI()
+			os.Exit(0)
+		} else if err != nil {
+			fatal("%v\n", err)
+		} else {
+			state = &tmp
+			host.TargetPID = state.Process.PID
+		}
+	} else if state, err = host.Observe(host.TargetPID); err != nil {
 		fatal("%v\n", err)
-	} else {
-		for i, tab := range tabViews {
-			if err = tab.Update(state); err != nil {
-				fatal("error updating tab %s: %+v\n", tabIDS[i], err)
-			}
-			if i == 0 {
-				tabs.TabNames[i] = " " + tab.Title()
-			} else {
-				tabs.TabNames[i] = tab.Title()
-			}
+	}
+
+	if rec != nil {
+		if err = rec.Add(state); err != nil {
+			fatal("%v\n", err)
 		}
 	}
-}
 
+	for i, tab := range tabViews {
+		if err = tab.Update(state); err != nil {
+			fatal("error updating tab %s: %+v\n", availTabIDS[i], err)
+		}
+
+		if i == 0 {
+			// i really miss C's ternary operator :/
+			left := " "
+			if rec != nil {
+				if t % 2 == 0 {
+					left = " [rec] "
+				} else {
+					left = "       "
+				}
+			} else if rep != nil {
+				if t % 2 == 0 {
+					left = " [play] "
+				} else {
+					left = "        "
+				}
+			}
+
+			tabs.TabNames[i] = left + tab.Title()
+		} else {
+			tabs.TabNames[i] = tab.Title()
+		}
+	}
+
+	t++
+}

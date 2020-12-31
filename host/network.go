@@ -101,6 +101,8 @@ func (e NetworkEntry) InfoString() string {
 }
 
 var (
+	protocols = []string{"tcp", "tcp6", "udp", "udp6", "unix"}
+
 	unixParser = regexp.MustCompile(`(?i)` +
 		`[a-f0-9]+:\s+` + // num
 		`[a-f0-9]+\s+` + // ref count
@@ -186,12 +188,10 @@ func parseNetworkForProtocol(proto string) ([]NetworkEntry, error) {
 	return entries, nil
 }
 
-func buildNetworkINodes() (NetworkINodes, error) {
+func parseNetworkInodes() (NetworkINodes, error) {
 	byInode := make(NetworkINodes)
-	protos := []string{"tcp", "tcp6", "udp", "udp6", "unix"}
-
-	for i := range protos {
-		if entries, err := parseNetworkForProtocol(protos[i]); err != nil {
+	for i := range protocols {
+		if entries, err := parseNetworkForProtocol(protocols[i]); err != nil {
 			return nil, err
 		} else {
 			for _, entry := range entries {

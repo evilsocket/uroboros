@@ -6,7 +6,6 @@ import (
 	"github.com/evilsocket/uroboros/host"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
-	"os/user"
 	"sort"
 	"strings"
 	"time"
@@ -210,47 +209,14 @@ func (v *INFOView) updateTree(state *host.State) error {
 }
 
 func (v *INFOView) updateInfo(state *host.State) error {
-	stat := state.Process.Stat
-	status := state.Process.Status
-	proc := state.Process.Process
-
-	startTimeSecs, err := stat.StartTime()
-	if err != nil {
-		panic(err)
-	}
-	startTime := time.Unix(int64(startTimeSecs), 0)
-
-	exe, err := proc.Executable()
-	if err != nil {
-		exe = fmt.Sprintf("error: %v", err)
-	}
-
-	cmdLineArr, err := proc.CmdLine()
-	cmdLine := ""
-	if err != nil {
-		cmdLine = fmt.Sprintf("error: %v", err)
-	} else {
-		cmdLine = strings.Join(cmdLineArr, " ")
-	}
-
-	root, err := proc.RootDir()
-	if err != nil {
-		root = fmt.Sprintf("error: %v", err)
-	}
-	cwd, err := proc.Cwd()
-	if err != nil {
-		cwd = fmt.Sprintf("error: %v", err)
-	}
-
-	wchan, err := proc.Wchan()
-	if err != nil {
-		wchan = fmt.Sprintf("error: %v", err)
-	}
+	proc := state.Process
+	stat := proc.Stat
+	status := proc.Status
 
 	flags := []string{}
-	for mask, descr := range processFlags {
+	for mask, description := range processFlags {
 		if stat.Flags&mask == mask {
-			flags = append(flags, descr)
+			flags = append(flags, description)
 		}
 	}
 	sort.Strings(flags)
@@ -258,41 +224,30 @@ func (v *INFOView) updateInfo(state *host.State) error {
 	// UIDs of the process (Real, effective, saved set, and filesystem UIDs)
 	types := []string{"real", "effective", "saved set", "filesystem"}
 	users := []string{}
-	for i, uid := range status.UIDs {
-		u, err := user.LookupId(uid)
-		if err == nil {
-			users = append(users, fmt.Sprintf("%s: %s (%s)", types[i], u.Username, uid))
-		} else {
-			users = append(users, fmt.Sprintf("%s: %s (%s)", types[i], uid, err))
-		}
+	for i, u := range proc.Users {
+		users = append(users, fmt.Sprintf("%s: %s (%s)", types[i], u.Username, u.Uid))
 	}
+
 	// same with groups
 	groups := []string{}
-	for i, gid := range status.GIDs {
-		g, err := user.LookupGroupId(gid)
-		if err == nil {
-			groups = append(groups, fmt.Sprintf("%s: %s (%s)", types[i], g.Name, gid))
-		} else {
-			groups = append(groups, fmt.Sprintf("%s: %s (%s)", types[i], gid, err))
-		}
+	for i, g := range proc.Groups {
+		groups = append(groups, fmt.Sprintf("%s: %s (%s)", types[i], g.Name, g.Gid))
 	}
 
-	prevRows := v.table.Rows
-
 	rows := [][]string{
-		{" Start Time", fmt.Sprintf(" %s", startTime)},
-		{" Running Time", fmt.Sprintf(" %s", time.Since(startTime))},
+		{" Start Time", fmt.Sprintf(" %s", proc.StartTime)},
+		{" Running Time", fmt.Sprintf(" %s", time.Since(proc.StartTime))},
 		{" Parent", fmt.Sprintf(" %s", v.parent)},
 		{" PID", fmt.Sprintf(" %d", stat.PID)},
 		{" Thread group ID", fmt.Sprintf(" %d", status.TGID)},
 		{" User", fmt.Sprintf(" %s", strings.Join(users, " | "))},
 		{" Group", fmt.Sprintf(" %s", strings.Join(groups, " | "))},
 		{" Name", fmt.Sprintf(" %s", status.Name)},
-		{" Executable", fmt.Sprintf(" %s", exe)},
-		{" Command Line", fmt.Sprintf(" %s", cmdLine)},
-		{" Root", fmt.Sprintf(" %s", root)},
-		{" CWD", fmt.Sprintf(" %s", cwd)},
-		{" Wait Channel", fmt.Sprintf(" %s", wchan)},
+		{" Executable", fmt.Sprintf(" %s", proc.Executable)},
+		{" Command Line", fmt.Sprintf(" %s", strings.Join(proc.CmdLine, " "))},
+		{" Root", fmt.Sprintf(" %s", proc.RootDir)},
+		{" CWD", fmt.Sprintf(" %s", proc.Cwd)},
+		{" Wait Channel", fmt.Sprintf(" %s", proc.WaitChan)},
 		{" Session ID", fmt.Sprintf(" %d", stat.Session)},
 		{" Priority", fmt.Sprintf(" %d", stat.Priority)},
 		{" Nice", fmt.Sprintf(" %d", stat.Nice)},
@@ -305,17 +260,6 @@ func (v *INFOView) updateInfo(state *host.State) error {
 		{" Virtual Mem", fmt.Sprintf(" %s", humanize.Bytes(uint64(stat.VSize*uint(state.PageSize))))},
 		{" Min Faults", fmt.Sprintf(" %d", stat.MinFlt)},
 		{" Maj Faults", fmt.Sprintf(" %d", stat.MajFlt)},
-	}
-
-	for i, row := range prevRows {
-		prevColVal := row[1]
-		currColVal := v.table.Rows[i][1]
-		// ignore changes on running time
-		if i != 1 && prevColVal != currColVal {
-			v.table.RowStyles[i] = ui.NewStyle(ui.ColorYellow, ui.ColorBlack, ui.ModifierBold)
-		} else {
-			v.table.RowStyles[i] = ui.NewStyle(ui.ColorWhite)
-		}
 	}
 
 	totRows := len(rows)
@@ -337,14 +281,10 @@ func (v *INFOView) updateInfo(state *host.State) error {
 }
 
 func (v *INFOView) Update(state *host.State) error {
-	stat := state.Process.Stat
-	if state.Process.Parent != nil {
-		if parentCmd, err := state.Process.Parent.Comm(); err == nil {
-			v.parent = fmt.Sprintf("(%d) %s", stat.PPID, parentCmd)
-		}
-	}
-	if v.parent == "" {
-		v.parent = fmt.Sprintf("(%d)", stat.PPID)
+	if state.Process.Parent != nil && state.Process.ParentComm != "" {
+		v.parent = fmt.Sprintf("(%d) %s", state.Process.Stat.PPID, state.Process.ParentComm)
+	} else {
+		v.parent = fmt.Sprintf("(%d)", state.Process.Stat.PPID)
 	}
 
 	if err := v.updateTree(state); err != nil {
@@ -352,6 +292,7 @@ func (v *INFOView) Update(state *host.State) error {
 	} else if err = v.updateInfo(state); err != nil {
 		return err
 	}
+
 	return nil
 }
 

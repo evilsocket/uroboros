@@ -2,11 +2,9 @@ package views
 
 import (
 	"fmt"
-	"github.com/dustin/go-humanize"
 	"github.com/evilsocket/uroboros/host"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -49,12 +47,6 @@ var fdFlags = map[int]string{
 	O_SYNC:      "SYNC",
 	O_TRUNC:     "TRUNC",
 	O_WRONLY:    "WRONLY",
-}
-
-var fdKnown = map[uintptr]string{
-	0: "0 (stdin)",
-	1: "1 (stdout)",
-	2: "2 (stderr)",
 }
 
 func init() {
@@ -109,40 +101,6 @@ func (v *FDView) setColumnSizes() {
 	autosizeTable(v.table)
 }
 
-func resolveTargetFor(pid int, fd uintptr, state *host.State, numFiles *int, numSocks *int, numOther *int) (string, string) {
-	path := fmt.Sprintf("%s/%d/fd/%d", host.ProcFS, pid, fd)
-	target, err := os.Readlink(path)
-	targetInfo := ""
-	if err != nil {
-		target = path
-	}
-
-	if idx := strings.Index(target, "socket:["); idx == 0 {
-		*numSocks++
-
-		inodeStr := strings.TrimRight(target[8:], "]")
-		inode, _ := strconv.ParseInt(inodeStr, 10, 64)
-		if entry, found := state.NetworkINodes[int(inode)]; found {
-			target = entry.String()
-			targetInfo = entry.InfoString()
-		} else {
-			target = fmt.Sprintf("socket:[%d]", inode)
-		}
-	} else if idx := strings.Index(target, ":["); idx >= 0 {
-		*numOther++
-	} else {
-		*numFiles++
-		if info, err := os.Stat(target); err == nil {
-			targetInfo = info.Mode().String()
-			if sz := uint64(info.Size()); sz > 0 {
-				targetInfo += " " + humanize.Bytes(sz)
-			}
-		}
-	}
-
-	return target, targetInfo
-}
-
 func (v *FDView) Event(e ui.Event) {
 	switch e.ID {
 	case "<Up>":
@@ -163,14 +121,22 @@ func (v *FDView) Update(state *host.State) error {
 	numSocks := 0
 	numOther := 0
 
-	for i, info := range state.Process.FDs {
-		fdNum, _ := strconv.ParseUint(info.FD, 10, 32)
-		fdName := info.FD
-		if known, found := fdKnown[uintptr(fdNum)]; found {
-			fdName = known
+	for _, fd := range state.Process.FDs {
+		info := state.Process.FDInfos[fd.FD]
+		name := info.Name
+		if name == "" {
+			name = fd.FD
 		}
 
-		flagsI, _ := strconv.ParseUint(state.Process.FDs[i].Flags, 16, 64)
+		if info.Type == host.FDTypeFile {
+			numFiles++
+		} else if info.Type == host.FDTypeSocket {
+			numSocks++
+		} else {
+			numOther++
+		}
+
+		flagsI, _ := strconv.ParseUint(fd.Flags, 16, 64)
 		var flags []string
 
 		if flagsI == O_RDONLY {
@@ -184,12 +150,11 @@ func (v *FDView) Update(state *host.State) error {
 			sort.Strings(flags)
 		}
 
-		target, targetInfo := resolveTargetFor(state.Process.PID, uintptr(fdNum), state, &numFiles, &numSocks, &numOther)
 		rows = append(rows, []string{
-			fmt.Sprintf(" %s", fdName),
-			fmt.Sprintf(" %s", target),
-			fmt.Sprintf(" %s", targetInfo),
-			fmt.Sprintf(" 0x%s (%s)", state.Process.FDs[i].Flags, strings.Join(flags, ", ")),
+			fmt.Sprintf(" %s", name),
+			fmt.Sprintf(" %s", info.Target),
+			fmt.Sprintf(" %s", info.Info),
+			fmt.Sprintf(" 0x%s (%s)", fd.Flags, strings.Join(flags, ", ")),
 		})
 	}
 

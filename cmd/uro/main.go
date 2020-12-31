@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/evilsocket/uroboros/host"
+	"github.com/evilsocket/uroboros/record"
 	ui "github.com/gizak/termui/v3"
 	"github.com/prometheus/procfs"
 	"os"
@@ -11,8 +12,15 @@ import (
 	"time"
 )
 
+var err error
+
 var targetName = ""
 var refreshPeriod = 500
+
+var recordFile = ""
+var replayFile = ""
+var rec *record.Record
+var rep *record.Record
 
 func init() {
 	flag.IntVar(&host.TargetPID, "pid", 0, "Process ID to monitor.")
@@ -20,6 +28,9 @@ func init() {
 	flag.IntVar(&refreshPeriod, "period", refreshPeriod, "Data refresh period in milliseconds.")
 	flag.StringVar(&host.ProcFS, "procfs", host.ProcFS, "Root of the proc filesystem.")
 	flag.StringVar(&tabIDS, "tabs", tabIDS, "Comma separated list of tab names to show.")
+
+	flag.StringVar(&recordFile, "record", recordFile, "If specified, record the session to this file.")
+	flag.StringVar(&replayFile, "replay", replayFile, "If specified, replay the session in this file.")
 }
 
 func searchTarget() {
@@ -62,7 +73,32 @@ func main() {
 
 	searchTarget()
 
-	if err := setupUI(host.TargetPID); err != nil {
+	if recordFile != "" {
+		if rec, err = record.New(); err != nil {
+			fmt.Printf("%v\n", err)
+			os.Exit(1)
+		}
+	} else if replayFile != "" {
+		if rep, err = record.Load(replayFile); err != nil {
+			fmt.Printf("%v\n", err)
+			os.Exit(1)
+		}
+
+		/*
+		var state host.State
+		for {
+			if err = rep.Next(&state); err == record.EOF {
+				return
+			} else if err != nil {
+				panic(err)
+			} else {
+				fmt.Println("state")
+			}
+		}
+		 */
+	}
+
+	if err = setupUI(host.TargetPID); err != nil {
 		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}

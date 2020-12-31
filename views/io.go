@@ -60,15 +60,12 @@ func (v *IOView) Title() string {
 }
 
 func (v *IOView) Update(state *host.State) error {
-	io, err := state.Process.Process.IO()
-	if err != nil {
-		return err
-	}
-
 	doReset := v.t >= pointsInTime(v.char)
 	if doReset {
 		v.t = 0
 	}
+
+	io := state.Process.IO
 
 	updateNLinesPlot(v.char, doReset,
 		[]float64{float64(io.RChar), float64(io.WChar)},
