@@ -271,7 +271,7 @@ func (v *INFOView) updateInfo(state *host.State) error {
 		v.cursor = from
 		rows = rows[v.cursor:to]
 		if len(rows) > 0 && len(rows[0]) > 0 {
-			rows[0][0] += scrollMsg
+			rows[0][0] += " " + scrollMsg
 		}
 	}
 
