@@ -17,11 +17,6 @@ var err error
 var targetName = ""
 var refreshPeriod = 500
 
-var recordFile = ""
-var replayFile = ""
-var rec *record.Record
-var rep *record.Record
-
 func init() {
 	flag.IntVar(&host.TargetPID, "pid", 0, "Process ID to monitor.")
 	flag.StringVar(&targetName, "search", "", "Search target process by name.")
@@ -35,7 +30,7 @@ func init() {
 
 func searchTarget() {
 	if targetName != "" {
-		if procs, err := procfs.AllProcs(); err !=  nil {
+		if procs, err := procfs.AllProcs(); err != nil {
 			panic(err)
 		} else {
 			matches := make(map[int]string)
@@ -74,28 +69,15 @@ func main() {
 	searchTarget()
 
 	if recordFile != "" {
-		if rec, err = record.New(); err != nil {
+		if recorder, err = record.New(); err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
 		}
 	} else if replayFile != "" {
-		if rep, err = record.Load(replayFile); err != nil {
+		if player, err = record.Load(replayFile); err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
 		}
-
-		/*
-		var state host.State
-		for {
-			if err = rep.Next(&state); err == record.EOF {
-				return
-			} else if err != nil {
-				panic(err)
-			} else {
-				fmt.Println("state")
-			}
-		}
-		 */
 	}
 
 	if err = setupUI(host.TargetPID); err != nil {
@@ -123,19 +105,28 @@ func main() {
 			switch e.ID {
 			case "q", "<C-c>":
 				return
+
 			case "<Resize>":
 				payload := e.Payload.(ui.Resize)
 				grid.SetRect(0, 0, payload.Width, payload.Height)
+
 			case "<Left>":
 				tabs.FocusLeft()
 			case "<Right>":
 				tabs.FocusRight()
+
+			case "<Space>", "p":
+				paused = !paused
+
+			case "f":
+				updateUI()
+				updateTabs()
 			}
 
 			// propagate to current view
 			getActiveTab().Event(e)
 		}
 
-		updateUI()
+			updateUI()
 	}
 }

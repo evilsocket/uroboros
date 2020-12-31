@@ -69,6 +69,12 @@ func (r *Record) Reset() {
 	r.offset = 0
 }
 
+func (r *Record) Progress() float64 {
+	r.Lock()
+	defer r.Unlock()
+	return float64(r.offset + 1) / float64(r.limit) * 100.0
+}
+
 func (r *Record) Next(v interface{}) error {
 	r.Lock()
 	defer r.Unlock()

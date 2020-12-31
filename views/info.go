@@ -8,7 +8,6 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 	"sort"
 	"strings"
-	"time"
 )
 
 var processStates = map[string]string{
@@ -236,7 +235,7 @@ func (v *INFOView) updateInfo(state *host.State) error {
 
 	rows := [][]string{
 		{" Start Time", fmt.Sprintf(" %s", proc.StartTime)},
-		{" Running Time", fmt.Sprintf(" %s", time.Since(proc.StartTime))},
+		{" Running Time", fmt.Sprintf(" %s", state.ObservedAt.Sub(proc.StartTime))},
 		{" Parent", fmt.Sprintf(" %s", v.parent)},
 		{" PID", fmt.Sprintf(" %d", stat.PID)},
 		{" Thread group ID", fmt.Sprintf(" %d", status.TGID)},
@@ -260,6 +259,10 @@ func (v *INFOView) updateInfo(state *host.State) error {
 		{" Virtual Mem", fmt.Sprintf(" %s", humanize.Bytes(uint64(stat.VSize*uint(state.PageSize))))},
 		{" Min Faults", fmt.Sprintf(" %d", stat.MinFlt)},
 		{" Maj Faults", fmt.Sprintf(" %d", stat.MajFlt)},
+	}
+
+	if state.Offline {
+		rows = append([][]string{{" Recording Time", fmt.Sprintf(" %s", state.ObservedAt)}}, rows...)
 	}
 
 	totRows := len(rows)

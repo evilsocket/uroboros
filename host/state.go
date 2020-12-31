@@ -9,18 +9,14 @@ import (
 var stateMutex = sync.Mutex{}
 var state *State
 
-
 type State struct {
 	sync.Mutex
-	procfs procfs.FS
-	// when this state has been parsed
-	ObservedAt time.Time
-	// network stuff
-	NetworkINodes NetworkINodes
-	// generic stats + cpu times
-	PageSize int
-	Stat     procfs.Stat
-	Memory   procfs.Meminfo
-	// process specific stats
-	Process Process
+	Offline       bool // whether or not this state comes from a recording or it's live
+	procfs        procfs.FS
+	ObservedAt    time.Time     // when this state has been parsed
+	NetworkINodes NetworkINodes // network stuff
+	PageSize      int           // generic stats + cpu times
+	Stat          procfs.Stat
+	Memory        procfs.Meminfo
+	Process       Process // process specific stats
 }

@@ -17,6 +17,7 @@ func Observe(pid int) (*State, error) {
 
 	if state == nil {
 		state = &State{
+			Offline:    false,
 			ObservedAt: time.Now(),
 			PageSize:   os.Getpagesize(),
 		}

@@ -6,6 +6,10 @@ uro: _build
 test-process: _build
 	go build -o _build/test-process cmd/test-process/*.go
 
+install: uro
+	cp _build/uro /usr/local/bin/
+	chmod a+x /usr/local/bin/uro
+
 _build:
 	mkdir -p _build
 

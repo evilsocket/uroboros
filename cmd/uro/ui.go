@@ -64,12 +64,13 @@ func setupUI(pid int) error {
 func closeUI() {
 	ui.Close()
 
-	if rec != nil {
+	if recorder != nil {
 		fmt.Printf("saving session to %s ...\n", recordFile)
-		if err = rec.Save(recordFile); err != nil {
+		if err = recorder.Save(recordFile); err != nil {
 			panic(err)
 		}
-	} else if rep != nil {
+	} else if player != nil {
+		// TODO: more replay stats
 		fmt.Printf("%s over.\n", replayFile)
 	}
 }
@@ -103,51 +104,42 @@ func updateTabs() {
 	var tmp host.State
 	var state *host.State
 
-	if rep != nil {
-		if err = rep.Next(&tmp); err == record.EOF {
-			closeUI()
-			os.Exit(0)
-		} else if err != nil {
-			fatal("%v\n", err)
-		} else {
-			state = &tmp
-			host.TargetPID = state.Process.PID
+	if player != nil {
+		if !paused {
+			if err = player.Next(&tmp); err == record.EOF {
+				closeUI()
+				os.Exit(0)
+			} else if err != nil {
+				fatal("%v\n", err)
+			} else {
+				state = &tmp
+				state.Offline = true
+				host.TargetPID = state.Process.PID
+			}
 		}
 	} else if state, err = host.Observe(host.TargetPID); err != nil {
 		fatal("%v\n", err)
 	}
 
-	if rec != nil {
-		if err = rec.Add(state); err != nil {
-			fatal("%v\n", err)
-		}
-	}
-
 	for i, tab := range tabViews {
-		if err = tab.Update(state); err != nil {
-			fatal("error updating tab %s: %+v\n", availTabIDS[i], err)
+		// don't update the tab data if the user paused
+		if !paused {
+			if err = tab.Update(state); err != nil {
+				fatal("error updating tab %s: %+v\n", availTabIDS[i], err)
+			}
 		}
 
 		if i == 0 {
-			// i really miss C's ternary operator :/
-			left := " "
-			if rec != nil {
-				if t % 2 == 0 {
-					left = " [rec] "
-				} else {
-					left = "       "
-				}
-			} else if rep != nil {
-				if t % 2 == 0 {
-					left = " [play] "
-				} else {
-					left = "        "
-				}
-			}
-
-			tabs.TabNames[i] = left + tab.Title()
+			tabs.TabNames[i] = decorateFirstTab(tab.Title())
 		} else {
 			tabs.TabNames[i] = tab.Title()
+		}
+	}
+
+	if recorder != nil {
+		state.Offline = true
+		if err = recorder.Add(state); err != nil {
+			fatal("%v\n", err)
 		}
 	}
 
