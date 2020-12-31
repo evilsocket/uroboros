@@ -106,7 +106,6 @@ func NewINFOView() *INFOView {
 		grid:  ui.NewGrid(),
 	}
 
-	v.tree.Title = "j/k/Enter"
 	v.tree.WrapText = false
 	v.tree.SelectedRow = 1
 	v.tree.SelectedRowStyle = ui.NewStyle(ui.ColorYellow, ui.ColorBlack, ui.ModifierBold)

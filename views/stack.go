@@ -26,7 +26,6 @@ func NewSTACKView() *STACKView {
 		grid:  ui.NewGrid(),
 	}
 
-	v.list.Title = "tasks (j/k)"
 	v.list.WrapText = false
 	v.list.SelectedRowStyle.Modifier = ui.ModifierBold
 	v.list.SelectedRowStyle.Fg = ui.ColorYellow

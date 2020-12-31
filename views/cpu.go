@@ -40,7 +40,7 @@ func NewCPUView() *CPUView {
 		plot: widgets.NewPlot(),
 	}
 
-	v.plot.Title = " CPU Usage "
+	v.plot.Title = " cpu usage "
 	v.plot.AxesColor = ui.ColorWhite
 	v.plot.Data = make([][]float64, 1)
 	v.plot.Data[0] = []float64{100.0}
@@ -82,7 +82,7 @@ func (v *CPUView) Update(state *host.State) error {
 	}
 
 	v.last = cpu
-	v.plot.Title = fmt.Sprintf(" CPU Usage %.1f%% ", cpu)
+	v.plot.Title = fmt.Sprintf(" cpu usage %.1f%% ", cpu)
 	v.plot.Data[0] = append(v.plot.Data[0], cpu)
 	v.t++
 

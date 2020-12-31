@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-var tabIDS = "info, cpu, stack, mem, maps, io, fd"
+var tabIDS = "info, stack, cpu, mem, maps, io, fd"
 
 var availTabIDS []string
 var tabTitles []string
@@ -86,6 +86,10 @@ func getActiveTab() views.View {
 func updateUI() {
 	drawable := getActiveTab().Drawable()
 	headRatio := 1. / 50
+
+	if len(availTabIDS) == 1 {
+		headRatio = 0.0
+	}
 
 	grid.Items = make([]*ui.GridItem, 0)
 	grid.Set(

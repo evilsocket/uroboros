@@ -13,20 +13,39 @@ func init() {
 }
 
 type MEMView struct {
-	plot *widgets.Plot
+	rss  *widgets.Plot
+	virt *widgets.Plot
+	grid *ui.Grid
 	last float64
 	t    int
 }
 
 func NewMEMView() *MEMView {
 	v := MEMView{
-		plot: widgets.NewPlot(),
+		rss:  widgets.NewPlot(),
+		virt: widgets.NewPlot(),
+		grid: ui.NewGrid(),
 	}
 
-	v.plot.Title = " Memory Usage "
-	v.plot.AxesColor = ui.ColorWhite
-	v.plot.Data = make([][]float64, 1)
-	v.plot.Data[0] = []float64{100.0}
+	v.rss.Title = " mem usage "
+	v.rss.AxesColor = ui.ColorWhite
+	v.rss.Data = make([][]float64, 1)
+	v.rss.Data[0] = []float64{100.0}
+
+	v.virt.Title = " virtual memory "
+	v.virt.AxesColor = ui.ColorWhite
+	v.virt.LineColors = []ui.Color{ui.ColorGreen}
+	v.virt.Data = make([][]float64, 1)
+	v.virt.Data[0] = []float64{100.0}
+
+	v.grid.Set(
+		ui.NewRow(1.0/2,
+			ui.NewCol(1.0, v.rss),
+		),
+		ui.NewRow(1.0/2,
+			ui.NewCol(1.0, v.virt),
+		),
+	)
 
 	return &v
 }
@@ -45,16 +64,22 @@ func (v *MEMView) Title() string {
 
 func (v *MEMView) Update(state *host.State) error {
 	used := state.Process.Stat.RSS * state.PageSize
-	usedPerc := float64(used) / float64(state.Memory.MemTotal * 1024) * 100.0
+	usedPerc := float64(used) / float64(state.Memory.MemTotal*1024) * 100.0
 
-	if v.t >= pointsInTime(v.plot) {
+	// TODO: unify this reset logic in a base class all views can use
+	if v.t >= pointsInTime(v.rss) {
 		v.t = 0
-		v.plot.Data[0] = []float64{100.0}
+		v.rss.Data[0] = []float64{100.0}
+		v.virt.Data[0] = []float64{100.0}
 	}
 
-	v.plot.Title = fmt.Sprintf(" Memory Usage %s of %s (%.1f%%) ", humanize.Bytes(uint64(used)),
-		humanize.Bytes(state.Memory.MemTotal * 1024), usedPerc)
-	v.plot.Data[0] = append(v.plot.Data[0], usedPerc)
+	v.rss.Title = fmt.Sprintf(" resident memory - %s of %s (%.1f%%) ", humanize.Bytes(uint64(used)),
+		humanize.Bytes(state.Memory.MemTotal*1024), usedPerc)
+	v.rss.Data[0] = append(v.rss.Data[0], usedPerc)
+
+	v.virt.Title = fmt.Sprintf(" virtual memory - %s ", humanize.Bytes(uint64(state.Process.Stat.VSize)))
+	v.virt.Data[0] = append(v.virt.Data[0], float64(state.Process.Stat.VSize) / (1024*1024*1024))
+
 	v.last = usedPerc
 	v.t++
 
@@ -62,5 +87,5 @@ func (v *MEMView) Update(state *host.State) error {
 }
 
 func (v *MEMView) Drawable() ui.Drawable {
-	return v.plot
+	return v.grid
 }

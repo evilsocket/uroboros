@@ -46,7 +46,7 @@ func updateNLinesPlot(p *widgets.Plot, reset bool, data []float64, title string)
 	if reset {
 		n := len(data)
 		for i := 0; i < n; i++ {
-			// line plot requires at least two points
+			// line rss requires at least two points
 			p.Data[i] = []float64{p.Data[i][len(p.Data[i])-1], data[i]}
 		}
 	} else {
