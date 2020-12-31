@@ -49,18 +49,14 @@ var sockTypes = map[uint]string{
 }
 
 // Entry holds the information of a /proc/net/* entry.
-// For example, /proc/net/tcp:
+//
+//For example, /proc/net/tcp:
 // sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
 // 0:  0100007F:13AD 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1000        0 18083222
+//
 // or /proc/net/unix
 // Num       RefCount Protocol Flags    Type St Inode Path
-// 0000000000000000: 00000002 00000000 00010000 0005 01 15878 /run/udev/control
-// 0000000000000000: 00000002 00000000 00000000 0002 01 28261 /run/user/1000/systemd/notify
-// 0000000000000000: 00000002 00000000 00010000 0001 01 28264 /run/user/1000/systemd/private
-// 0000000000000000: 00000002 00000000 00010000 0001 01 28270 /run/user/1000/bus
 // 0000000000000000: 00000002 00000000 00010000 0001 01 28271 /run/user/1000/gnupg/S.dirmngr
-// 0000000000000000: 00000002 00000000 00010000 0001 01 28272 /run/user/1000/gnupg/S.gpg-agent.browser
-// 0000000000000000: 00000002 00000000 00010000 0001 01 28273 /run/user/1000/gnupg/S.gpg-agent.extra
 type NetworkEntry struct {
 	Proto string
 	// for unix

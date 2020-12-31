@@ -66,6 +66,13 @@ func resolveDescriptor(state *State, pid int, fdStr string) (fdInfo FDInfo, err 
 		inodeStr := strings.TrimRight(target[8:], "]")
 		fdInfo.INode, _ = strconv.ParseUint(inodeStr, 10, 64)
 
+		// parse only if needed
+		if state.NetworkINodes == nil {
+			if state.NetworkINodes, err = parseNetworkInodes(); err != nil {
+				return
+			}
+		}
+
 		if entry, found := state.NetworkINodes[int(fdInfo.INode)]; found {
 			fdInfo.Target = entry.String()
 			fdInfo.Info = entry.InfoString()

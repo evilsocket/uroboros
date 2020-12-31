@@ -8,12 +8,14 @@ import (
 	ui "github.com/gizak/termui/v3"
 	"github.com/prometheus/procfs"
 	"os"
+	"runtime/pprof"
 	"strings"
 	"time"
 )
 
 var err error
 
+var cpuProfile = ""
 var targetName = ""
 var refreshPeriod = 500
 
@@ -26,6 +28,8 @@ func init() {
 
 	flag.StringVar(&recordFile, "record", recordFile, "If specified, record the session to this file.")
 	flag.StringVar(&replayFile, "replay", replayFile, "If specified, replay the session in this file.")
+
+	flag.StringVar(&cpuProfile, "cpu-profile", cpuProfile, "Used for debugging.")
 }
 
 func searchTarget() {
@@ -67,6 +71,15 @@ func main() {
 	flag.Parse()
 
 	searchTarget()
+
+	if cpuProfile != "" {
+		f, err := os.Create(cpuProfile)
+		if err != nil {
+			panic(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 
 	if recordFile != "" {
 		if recorder, err = record.New(); err != nil {

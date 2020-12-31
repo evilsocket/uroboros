@@ -27,6 +27,7 @@ func Observe(pid int) (*State, error) {
 		}
 	} else {
 		state.ObservedAt = time.Now()
+		state.NetworkINodes = nil
 	}
 
 	// gather host generic info first
@@ -38,11 +39,6 @@ func Observe(pid int) (*State, error) {
 
 	// then gather the process specific info
 	if state.Process, err = parseProcess(pid, state.procfs); err != nil {
-		return nil, err
-	}
-
-	// used to lookup fds/inodes
-	if state.NetworkINodes, err = parseNetworkInodes(); err != nil {
 		return nil, err
 	}
 
