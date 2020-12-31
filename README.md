@@ -19,25 +19,39 @@ would do.
 
 For the moment there're no binary releases and building from sources is the only way (requires Go and make):
 
-    make uro
+    sudo make install
 
 To monitor by pid:
 
-    ./_build/uro -pid 1234
+    sudo uro -pid 1234
 
 To search by process name:
 
-    ./_build/uro -search test-process
+    sudo uro -search test-process
 
 Only show a subset of tabs:
 
-    ./_build/uro -pid 1234 -tabs "cpu, mem, io"
+    sudo uro -pid 1234 -tabs "cpu, mem, io"
+
+To save a recording on disk:
+
+    sudo uro -pid 1234 -record /tmp/process-activity.dat
+
+To play a recording from disk:
+
+    uro -replay /tmp/process-activity.dat
 
 For more options:
     
     ./_build/uro -help
 
-Navigate tabs with left and right arrows, scroll tables with up and down arrows, lists and trees with j and k.
+### UI Navigation
+
+* Left and right arrows to navigate tabs.
+* Up and down arrows to scroll tables.
+* `j` and `k` to navigate lists, enter to select an element.
+* In replay mode, use `p` to pause, `f` to fast forward.
+* Use `q` or `C-c` to quit.
 
 ## License
 
