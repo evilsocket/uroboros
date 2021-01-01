@@ -37,13 +37,13 @@ To save a recording on disk:
 
     sudo uro -pid 1234 -record /tmp/process-activity.dat
 
-To play a recording from disk:
+To play a recording from disk (works on any OS and does not require sudo):
 
     uro -replay /tmp/process-activity.dat
 
 For more options:
     
-    ./_build/uro -help
+    uro -help
 
 ### UI Navigation
 
