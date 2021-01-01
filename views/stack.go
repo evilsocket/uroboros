@@ -13,7 +13,7 @@ func init() {
 }
 
 type STACKView struct {
-	list   *widgets.List
+	tree   *widgets.Tree
 	table  *widgets.Table
 	grid   *ui.Grid
 	cursor int
@@ -21,14 +21,13 @@ type STACKView struct {
 
 func NewSTACKView() *STACKView {
 	v := STACKView{
-		list:  widgets.NewList(),
+		tree:  widgets.NewTree(),
 		table: widgets.NewTable(),
 		grid:  ui.NewGrid(),
 	}
 
-	v.list.WrapText = false
-	v.list.SelectedRowStyle.Modifier = ui.ModifierBold
-	v.list.SelectedRowStyle.Fg = ui.ColorYellow
+	v.tree.WrapText = false
+	v.tree.SelectedRowStyle = ui.NewStyle(ui.ColorYellow, ui.ColorBlack, ui.ModifierBold)
 
 	v.table.TextStyle = ui.NewStyle(ui.ColorWhite)
 	v.table.RowSeparator = true
@@ -38,10 +37,11 @@ func NewSTACKView() *STACKView {
 	}
 	v.table.ColumnResizer = v.setColumnSizes
 
+	// TODO: autosize column depending on content
 	v.grid.Set(
 		ui.NewRow(1.,
-			ui.NewCol(1./15, v.list),
-			ui.NewCol(1.-1./15, v.table),
+			ui.NewCol(1./5, v.tree),
+			ui.NewCol(1.-1./5, v.table),
 		),
 	)
 
@@ -58,10 +58,9 @@ func (v *STACKView) Event(e ui.Event) {
 		v.cursor++
 
 	case "j":
-		v.list.ScrollDown()
-
+		v.tree.ScrollDown()
 	case "k":
-		v.list.ScrollUp()
+		v.tree.ScrollUp()
 	}
 }
 
@@ -80,21 +79,36 @@ func (v *STACKView) setColumnSizes() {
 }
 
 func (v *STACKView) Update(state *host.State) error {
-	v.list.Rows = make([]string, len(state.Process.Tasks))
-	for i, t := range state.Process.Tasks {
-		if t.ID == host.TargetPID {
-			v.list.Rows[i] = fmt.Sprintf(" %s ", t.IDStr)
-		} else {
-			v.list.Rows[i] = fmt.Sprintf("   %s ", t.IDStr)
+	var main host.Task
+	for _, task := range state.Process.Tasks {
+		if task.ID == host.TargetPID {
+			main = task
+			break
 		}
 	}
 
-	prevRows := v.table.Rows
+	nodes := []*widgets.TreeNode{
+		{
+			Value: node{main.ID, main.String()},
+			Nodes: []*widgets.TreeNode{},
+		},
+	}
+
+	for _, task := range state.Process.Tasks {
+		if task.ID != host.TargetPID {
+			nodes[0].Nodes = append(nodes[0].Nodes, &widgets.TreeNode{
+				Value: node{task.ID, task.String()},
+			})
+		}
+	}
+
+	v.tree.SetNodes(nodes)
+	v.tree.ExpandAll()
 
 	var rows [][]string
 
 	for i, task := range state.Process.Tasks {
-		if i == v.list.SelectedRow {
+		if i == v.tree.SelectedRow {
 			for _, entry := range task.Stack {
 				rows = append(rows, []string{
 					fmt.Sprintf(" 0x%08x", entry.Address),
@@ -104,17 +118,6 @@ func (v *STACKView) Update(state *host.State) error {
 				})
 			}
 			break
-		}
-	}
-
-	for i, row := range prevRows {
-		prevColVal := row[1]
-		currColVal := v.table.Rows[i][1]
-		// ignore changes on running time
-		if i != 1 && prevColVal != currColVal {
-			v.table.RowStyles[i] = ui.NewStyle(ui.ColorYellow, ui.ColorBlack, ui.ModifierBold)
-		} else {
-			v.table.RowStyles[i] = ui.NewStyle(ui.ColorWhite)
 		}
 	}
 
