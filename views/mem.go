@@ -15,6 +15,7 @@ func init() {
 type MEMView struct {
 	rss  *widgets.Plot
 	virt *widgets.Plot
+	swap *widgets.Plot
 	grid *ui.Grid
 	last float64
 	t    int
@@ -24,6 +25,7 @@ func NewMEMView() *MEMView {
 	v := MEMView{
 		rss:  widgets.NewPlot(),
 		virt: widgets.NewPlot(),
+		swap: widgets.NewPlot(),
 		grid: ui.NewGrid(),
 	}
 
@@ -38,12 +40,21 @@ func NewMEMView() *MEMView {
 	v.virt.Data = make([][]float64, 1)
 	v.virt.Data[0] = []float64{0.0}
 
+	v.swap.Title = " swap "
+	v.swap.AxesColor = ui.ColorWhite
+	v.swap.LineColors = []ui.Color{ui.ColorBlue}
+	v.swap.Data = make([][]float64, 1)
+	v.swap.Data[0] = []float64{0.0}
+
 	v.grid.Set(
-		ui.NewRow(1.0/2,
+		ui.NewRow(1.0/3,
 			ui.NewCol(1.0, v.rss),
 		),
-		ui.NewRow(1.0/2,
+		ui.NewRow(1.0/3,
 			ui.NewCol(1.0, v.virt),
+		),
+		ui.NewRow(1.0/3,
+			ui.NewCol(1.0, v.swap),
 		),
 	)
 
@@ -71,6 +82,7 @@ func (v *MEMView) Update(state *host.State) error {
 		v.t = 0
 		v.rss.Data[0] = []float64{100.0}
 		v.virt.Data[0] = []float64{0.0}
+		v.swap.Data[0] = []float64{0.0}
 	}
 
 	v.rss.Title = fmt.Sprintf(" resident memory - %s of %s (%.1f%%) ", humanize.Bytes(uint64(used)),
@@ -78,7 +90,10 @@ func (v *MEMView) Update(state *host.State) error {
 	v.rss.Data[0] = append(v.rss.Data[0], usedPerc)
 
 	v.virt.Title = fmt.Sprintf(" virtual memory - %s ", humanize.Bytes(uint64(state.Process.Stat.VSize)))
-	v.virt.Data[0] = append(v.virt.Data[0], float64(state.Process.Stat.VSize) / (1024*1024*1024))
+	v.virt.Data[0] = append(v.virt.Data[0], float64(state.Process.Stat.VSize)/(1024*1024*1024))
+
+	v.swap.Title = fmt.Sprintf(" swap - %s ", humanize.Bytes(uint64(state.Process.Status.VmSwap)))
+	v.swap.Data[0] = append(v.swap.Data[0], float64(state.Process.Status.VmSwap)/(1024*1024*1024))
 
 	v.last = usedPerc
 	v.t++
