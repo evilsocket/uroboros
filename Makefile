@@ -7,12 +7,8 @@ test-process: _build
 	go build -o _build/test-process cmd/test-process/*.go
 
 install: uro
-	if [ ! -d "/usr/local/bin/" ]; then \
-	mkdir /usr/local/bin/; \
-        export PATH=${{$}}PATH:/usr/local/bin/; \
-	fi
-	cp _build/uro /usr/local/bin/; \
-        chmod a+x /usr/local/bin/uro; \
+	cp _build/uro /usr/bin/
+        chmod a+x /usr/bin/uro
 	
 _build:
 	mkdir -p _build
