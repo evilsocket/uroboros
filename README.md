@@ -11,7 +11,7 @@ runtime information in the terminal, without affecting the process performances 
 solutions 
 would do.
 
-[![click here for a video](https://asciinema.org/a/382003.png)](https://asciinema.org/a/382003)
+[![click here for a video](https://asciinema.org/a/382091.png)](https://asciinema.org/a/382091)
 
 **Work in progress**
 
