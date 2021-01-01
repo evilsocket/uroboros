@@ -13,9 +13,11 @@ would do.
 
 [![click here for a video](https://asciinema.org/a/382003.png)](https://asciinema.org/a/382003)
 
+**Work in progress**
+
 ## Usage
 
-For the moment there're no binary releases and building from sources is the only way (requires Go and make):
+For the moment there are no binary releases and building from sources is the only way (requires Go and make):
 
     sudo make install
 
