@@ -6,7 +6,7 @@ import (
 	"github.com/evilsocket/islazy/str"
 	"net"
 	"os"
-	"regexp"
+	"strings"
 )
 
 type NetworkINodes map[int]NetworkEntry
@@ -98,31 +98,60 @@ func (e NetworkEntry) InfoString() string {
 
 var (
 	protocols = []string{"tcp", "tcp6", "udp", "udp6", "unix"}
-
-	unixParser = regexp.MustCompile(`(?i)` +
-		`[a-f0-9]+:\s+` + // num
-		`[a-f0-9]+\s+` + // ref count
-		`[a-f0-9]+\s+` + // protocol
-		`[a-f0-9]+\s+` + // flags
-		`([a-f0-9]+)\s+` + // type
-		`([a-f0-9]+)\s+` + // state
-		`(\d+)\s*` + // inode
-		`(.*)`, // path
-	)
-
-	tcpAndUdpParser = regexp.MustCompile(`(?i)` +
-		`\d+:\s+` + // number of entry
-		`([a-f0-9]{8,32}):([a-f0-9]{4})\s+` + // local_address
-		`([a-f0-9]{8,32}):([a-f0-9]{4})\s+` + // rem_address
-		`([a-f0-9]{2})\s+` + // connection state
-		`[a-f0-9]{8}:[a-f0-9]{8}\s+` + // tx_queue rx_queue
-		`[a-f0-9]{2}:[a-f0-9]{8}\s+` + // tr tm->when
-		`[a-f0-9]{8}\s+` + // retrnsmt
-		`(\d+)\s+` + // uid
-		`\d+\s+` + // timeout
-		`(\d+)\s+` + // inode
-		`.+`) // stuff we don't care about
 )
+
+func parseIP(filename, line, protocol string) (entry NetworkEntry, err error) {
+	fields := strings.Fields(line)
+	if len(fields) < 10 {
+		return entry, fmt.Errorf("could not parse netstat line from %s (got %d fields): %s", filename, len(fields), line)
+	}
+
+	local := strings.Split(fields[1], ":")
+	remote := strings.Split(fields[2], ":")
+	sockState := hexToInt(fields[3])
+
+	entry = NetworkEntry{
+		Proto:       protocol,
+		SrcIP:       hexToIP(local[0]),
+		SrcPort:     hexToInt(local[1]),
+		DstIP:       hexToIP(remote[0]),
+		DstPort:     hexToInt(remote[1]),
+		State:       sockState,
+		StateString: sockStates[sockState],
+		UserId:      decToInt(fields[7]),
+		INode:       decToInt(fields[9]),
+	}
+
+	return entry, nil
+}
+
+func parseUnix(filename, line, protocol string) (entry NetworkEntry, err error) {
+	fields := strings.Fields(line)
+	num := len(fields)
+	if num < 7 {
+		return entry, fmt.Errorf("could not parse netstat line from %s (got %d fields): %s", filename, 7, line)
+	}
+
+	sockType := hexToInt(fields[4])
+	sockState := hexToInt(fields[5])
+	path := ""
+
+	if num > 7 {
+		path = fields[7]
+	}
+
+	entry = NetworkEntry{
+		Proto:       protocol,
+		Type:        sockType,
+		TypeString:  sockTypes[sockType],
+		State:       sockState,
+		StateString: sockStates[sockState],
+		INode:       decToInt(fields[6]),
+		Path:        path,
+	}
+
+	return entry, nil
+}
 
 // Parse scans and retrieves the opened connections, from /proc/net/ files
 func parseNetworkForProtocol(proto string) ([]NetworkEntry, error) {
@@ -133,49 +162,25 @@ func parseNetworkForProtocol(proto string) ([]NetworkEntry, error) {
 	}
 	defer fd.Close()
 
+	var entry NetworkEntry
 	entries := make([]NetworkEntry, 0)
 	scanner := bufio.NewScanner(fd)
+
 	for lineno := 0; scanner.Scan(); lineno++ {
 		// skip column names
 		if lineno == 0 {
 			continue
 		}
 
-		var entry NetworkEntry
 		line := str.Trim(scanner.Text())
 		if proto == "unix" {
-			m := unixParser.FindStringSubmatch(line)
-			if m == nil {
-				panic(fmt.Errorf("could not parse netstat line from %s: %s", filename, line))
-				continue
+			if entry, err = parseUnix(filename, line, proto); err != nil {
+				panic(err)
 			}
-			entry = NetworkEntry{
-				Proto: proto,
-				Type:  hexToInt(m[1]),
-				State: hexToInt(m[2]),
-				INode: decToInt(m[3]),
-				Path:  m[4],
-			}
-			entry.TypeString = sockTypes[entry.Type]
-			entry.StateString = sockStates[entry.State]
 		} else {
-			m := tcpAndUdpParser.FindStringSubmatch(line)
-			if m == nil {
-				panic(fmt.Errorf("could not parse netstat line from %s: %s", filename, line))
-				continue
+			if entry, err = parseIP(filename, line, proto); err != nil {
+				panic(err)
 			}
-
-			entry = NetworkEntry{
-				Proto:   proto,
-				SrcIP:   hexToIP(m[1]),
-				SrcPort: hexToInt(m[2]),
-				DstIP:   hexToIP(m[3]),
-				DstPort: hexToInt(m[4]),
-				State:   hexToInt(m[5]),
-				UserId:  decToInt(m[6]),
-				INode:   decToInt(m[7]),
-			}
-			entry.StateString = sockStates[entry.State]
 		}
 
 		entries = append(entries, entry)
