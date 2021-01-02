@@ -71,7 +71,7 @@ func main() {
 	})
 
 	go func() {
-		fmt.Println("/debug and /slow api on :8080\n")
+		fmt.Println("/debug and /slow api on :8080")
 		panic(http.ListenAndServe("0.0.0.0:8080", router))
 	}()
 
