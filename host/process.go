@@ -81,7 +81,10 @@ func parseProcess(pid int, procfs procfs.FS) (proc Process, err error) {
 	for _, uid := range proc.Status.UIDs {
 		var u *user.User
 		if u, err = user.LookupId(uid); err != nil {
-			return
+			proc.Users = append(proc.Users, &user.User{
+				Uid:      uid,
+				Username: uid,
+			})
 		} else {
 			proc.Users = append(proc.Users, u)
 		}
@@ -90,7 +93,10 @@ func parseProcess(pid int, procfs procfs.FS) (proc Process, err error) {
 	for _, gid := range proc.Status.GIDs {
 		var g *user.Group
 		if g, err = user.LookupGroupId(gid); err != nil {
-			return
+			proc.Groups = append(proc.Groups, &user.Group{
+				Gid:  gid,
+				Name: gid,
+			})
 		} else {
 			proc.Groups = append(proc.Groups, g)
 		}
