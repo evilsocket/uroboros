@@ -48,22 +48,12 @@ var sockTypes = map[uint]string{
 	5: "SOCK_SEQPACKET",
 }
 
-// Entry holds the information of a /proc/net/* entry.
-//
-//For example, /proc/net/tcp:
-// sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
-// 0:  0100007F:13AD 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1000        0 18083222
-//
-// or /proc/net/unix
-// Num       RefCount Protocol Flags    Type St Inode Path
-// 0000000000000000: 00000002 00000000 00010000 0001 01 28271 /run/user/1000/gnupg/S.dirmngr
 type NetworkEntry struct {
-	Proto string
-	// for unix
-	Type       uint
-	TypeString string
-	Path       string
-	// for everythign else
+	Proto       string
+	Type        uint
+	TypeString  string
+	Groups      string
+	Path        string
 	State       uint
 	StateString string
 	SrcIP       net.IP
@@ -77,6 +67,8 @@ type NetworkEntry struct {
 func (e NetworkEntry) String() string {
 	if e.Proto == "unix" {
 		return fmt.Sprintf("(%s) %s path='%s'", e.Proto, e.TypeString, e.Path)
+	} else if e.Proto == "netlink" {
+		return fmt.Sprintf("(%s) groups=%s", e.Proto, e.Groups)
 	} else if e.State == TCP_LISTEN {
 		return fmt.Sprintf("(%s) %s:%d", e.Proto, e.SrcIP, e.SrcPort)
 	}
@@ -97,9 +89,12 @@ func (e NetworkEntry) InfoString() string {
 }
 
 var (
-	protocols = []string{"tcp", "tcp6", "udp", "udp6", "unix"}
+	protocols = []string{"tcp", "tcp6", "udp", "udp6", "unix", "netlink"}
 )
 
+// /proc/net/tcp:
+// sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
+// 0:  0100007F:13AD 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1000        0 18083222
 func parseIP(filename, line, protocol string) (entry NetworkEntry, err error) {
 	fields := strings.Fields(line)
 	if len(fields) < 10 {
@@ -125,6 +120,9 @@ func parseIP(filename, line, protocol string) (entry NetworkEntry, err error) {
 	return entry, nil
 }
 
+// /proc/net/unix
+// Num       RefCount Protocol Flags    Type St Inode Path
+// 0000000000000000: 00000002 00000000 00010000 0001 01 28271 /run/user/1000/gnupg/S.dirmngr
 func parseUnix(filename, line, protocol string) (entry NetworkEntry, err error) {
 	fields := strings.Fields(line)
 	num := len(fields)
@@ -153,6 +151,26 @@ func parseUnix(filename, line, protocol string) (entry NetworkEntry, err error) 
 	return entry, nil
 }
 
+// /proc/net/netlink
+// sk               Eth Pid        Groups   Rmem     Wmem     Dump     Locks     Drops     Inode
+// 0000000000000000 0   2192944774 00000011 0        0        0        2         0         4842849
+// 0000000000000000 0   2014       00000110 0        0        0        2         0         27854
+func parseNetlink(filename, line, protocol string) (entry NetworkEntry, err error) {
+	fields := strings.Fields(line)
+	num := len(fields)
+	if num < 10 {
+		return entry, fmt.Errorf("could not parse netstat line from %s (got %d fields): %s", filename, 7, line)
+	}
+
+	entry = NetworkEntry{
+		Proto:  protocol,
+		Groups: fields[3],
+		INode:  decToInt(fields[9]),
+	}
+
+	return entry, nil
+}
+
 // Parse scans and retrieves the opened connections, from /proc/net/ files
 func parseNetworkForProtocol(proto string) ([]NetworkEntry, error) {
 	filename := fmt.Sprintf("%s/net/%s", ProcFS, proto)
@@ -175,6 +193,10 @@ func parseNetworkForProtocol(proto string) ([]NetworkEntry, error) {
 		line := str.Trim(scanner.Text())
 		if proto == "unix" {
 			if entry, err = parseUnix(filename, line, proto); err != nil {
+				panic(err)
+			}
+		} else if proto == "netlink" {
+			if entry, err = parseNetlink(filename, line, proto); err != nil {
 				panic(err)
 			}
 		} else {
