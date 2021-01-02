@@ -6,6 +6,7 @@ import (
 	"github.com/evilsocket/islazy/str"
 	"os"
 	"regexp"
+	"strings"
 )
 
 type StackEntry struct {
@@ -34,7 +35,7 @@ func parseStack(taskPath string) (Stack, error) {
 		var entry StackEntry
 
 		line := str.Trim(scanner.Text())
-		if line == "[<0>] 0xffffffffffffffff" {
+		if strings.Index(line, "0xffffffffffffffff") != -1 {
 			continue
 		}
 
