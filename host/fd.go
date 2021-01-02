@@ -46,19 +46,15 @@ func resolveDescriptor(state *State, pid int, fdStr string) (fdInfo FDInfo, err 
 	}
 
 	// check standards
+	fdName := fdStr
 	if std, found := stdIO[fd]; found {
-		fdInfo = FDInfo{
-			FD:     fd,
-			Type:   FDTypeFile,
-			Target: target,
-			Name:   std,
-		}
-		return
+		fdName = std
 	}
 
 	// TODO: add more parsers
 	if idx := strings.Index(target, "socket:["); idx == 0 {
 		fdInfo = FDInfo{
+			Name: fdName,
 			FD:   fd,
 			Type: FDTypeSocket,
 		}
@@ -83,12 +79,14 @@ func resolveDescriptor(state *State, pid int, fdStr string) (fdInfo FDInfo, err 
 	} else if idx := strings.Index(target, ":["); idx >= 0 {
 		fdInfo = FDInfo{
 			FD:     fd,
+			Name:   fdName,
 			Type:   FDTypeOther,
 			Target: target,
 		}
 	} else {
 		fdInfo = FDInfo{
 			FD:     fd,
+			Name:   fdName,
 			Type:   FDTypeFile,
 			Target: target,
 		}

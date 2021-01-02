@@ -17,9 +17,10 @@ would do.
 
 ## Usage
 
-For the moment there are no binary releases and building from sources is the only way (requires Go and make):
+For the moment there are no binary releases and building from sources is the only way (requires the go compiler, 
+will install the binary in $GOPATH/bin):
 
-    sudo make install
+    go get github.com/evilsocket/uroboros/cmd/uro
 
 To monitor by pid:
 
