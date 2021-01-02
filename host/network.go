@@ -69,9 +69,14 @@ func (e NetworkEntry) String() string {
 		return fmt.Sprintf("(%s) %s path='%s'", e.Proto, e.TypeString, e.Path)
 	} else if e.Proto == "netlink" {
 		return fmt.Sprintf("(%s) groups=%s", e.Proto, e.Groups)
+	} else if e.Proto == "udp" {
+		if e.DstIP.String() == "0.0.0.0" {
+			return fmt.Sprintf("(%s) %s:%d", e.Proto, e.SrcIP, e.SrcPort)
+		}
 	} else if e.State == TCP_LISTEN {
 		return fmt.Sprintf("(%s) %s:%d", e.Proto, e.SrcIP, e.SrcPort)
 	}
+
 	return fmt.Sprintf("(%s) %s:%d <-> %s:%d", e.Proto, e.SrcIP, e.SrcPort, e.DstIP, e.DstPort)
 }
 
