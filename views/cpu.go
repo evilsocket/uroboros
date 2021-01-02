@@ -124,7 +124,7 @@ func (v *CPUView) Update(state *host.State) error {
 	v.tot.Data[0] = append(v.tot.Data[0], cpuTot)
 	v.usr.Title = fmt.Sprintf(" user time %.1f%% ", cpuUser)
 	v.usr.Data[0] = append(v.usr.Data[0], cpuUser)
-	v.sys.Title = fmt.Sprintf(" kernel time %.1f%% ", cpuUser)
+	v.sys.Title = fmt.Sprintf(" kernel time %.1f%% ", cpuSys)
 	v.sys.Data[0] = append(v.sys.Data[0], cpuSys)
 
 	v.t++
