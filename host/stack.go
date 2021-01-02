@@ -35,7 +35,7 @@ func parseStack(taskPath string) (Stack, error) {
 		var entry StackEntry
 
 		line := str.Trim(scanner.Text())
-		if strings.Index(line, "0xffffffffffffffff") != -1 {
+		if strings.Index(line, "0xffffffff") != -1 {
 			continue
 		}
 
