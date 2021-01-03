@@ -85,8 +85,13 @@ func (v *MEMView) Update(state *host.State) error {
 		v.swap.Data[0] = []float64{0.0}
 	}
 
-	v.rss.Title = fmt.Sprintf(" resident memory - %s of %s (%.1f%%) ", humanize.Bytes(uint64(used)),
-		humanize.Bytes(state.Memory.MemTotal*1024), usedPerc)
+	cgroupMemLimit := ""
+	if state.Process.MemoryLimit != -1 {
+		cgroupMemLimit = fmt.Sprintf("- cgroup memory limit: %s ", humanize.Bytes(uint64(state.Process.MemoryLimit)))
+	}
+
+	v.rss.Title = fmt.Sprintf(" resident memory - %s of %s (%.1f%%) %s", humanize.Bytes(uint64(used)),
+		humanize.Bytes(state.Memory.MemTotal*1024), usedPerc, cgroupMemLimit)
 	v.rss.Data[0] = append(v.rss.Data[0], usedPerc)
 
 	v.virt.Title = fmt.Sprintf(" virtual memory - %s ", humanize.Bytes(uint64(state.Process.Stat.VSize)))

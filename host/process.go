@@ -2,7 +2,10 @@ package host
 
 import (
 	"github.com/prometheus/procfs"
+	"io/ioutil"
 	"os/user"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -13,22 +16,23 @@ type Process struct {
 	ParentStat procfs.ProcStat
 	ParentComm string
 
-	Process    procfs.Proc
-	Users      []*user.User
-	Groups     []*user.Group
-	Stat       procfs.ProcStat
-	StartTime  time.Time
-	Executable string
-	CmdLine    []string
-	RootDir    string
-	Cwd        string
-	WaitChan   string
-	Status     procfs.ProcStatus
-	Maps       []*procfs.ProcMap
-	FDs        procfs.ProcFDInfos
-	FDInfos    map[string]FDInfo
-	IO         procfs.ProcIO
-	Tasks      []Task
+	Process     procfs.Proc
+	Users       []*user.User
+	Groups      []*user.Group
+	Stat        procfs.ProcStat
+	StartTime   time.Time
+	Executable  string
+	CmdLine     []string
+	RootDir     string
+	Cwd         string
+	WaitChan    string
+	MemoryLimit int
+	Status      procfs.ProcStatus
+	Maps        []*procfs.ProcMap
+	FDs         procfs.ProcFDInfos
+	FDInfos     map[string]FDInfo
+	IO          procfs.ProcIO
+	Tasks       []Task
 }
 
 func parseProcess(pid int, procfs procfs.FS) (proc Process, err error) {
@@ -66,6 +70,39 @@ func parseProcess(pid int, procfs procfs.FS) (proc Process, err error) {
 		return
 	} else if proc.IO, err = proc.Process.IO(); err != nil {
 		return
+	}
+
+	// get memory limit for the process in cgroups (v1 or v2)
+	proc.MemoryLimit = -1 // unlimited by default
+
+	if cgroups, err := proc.Process.Cgroups(); err == nil {
+
+		readValue := func(filepath string) (int, error) {
+			memLimitStr, err := ioutil.ReadFile(filepath)
+			if err != nil {
+				return -1, err
+			}
+
+			memLimit, err := strconv.Atoi(strings.TrimSpace(string(memLimitStr)))
+			return memLimit, err
+		}
+
+		for _, cgroup := range cgroups {
+			memCgroup := "/sys/fs/cgroup" + cgroup.Path
+
+			// v2 cgroup
+			if memoryLimit, err := readValue(memCgroup + "/memory.max"); err == nil {
+				proc.MemoryLimit = memoryLimit
+				break
+			}
+
+			// v1 cgroup
+			if memoryLimit, err := readValue(memCgroup + "/memory.limit_in_bytes"); err == nil {
+				proc.MemoryLimit = memoryLimit
+				break
+			}
+
+		}
 	}
 
 	if proc.Status, err = proc.Process.NewStatus(); err != nil {
