@@ -74,8 +74,9 @@ func (v *MEMView) Title() string {
 }
 
 func (v *MEMView) Update(state *host.State) error {
+	memAvail := state.Memory.MemTotal * 1024
 	used := state.Process.Stat.RSS * state.PageSize
-	usedPerc := float64(used) / float64(state.Memory.MemTotal*1024) * 100.0
+	usedPerc := float64(used) / float64(memAvail) * 100.0
 
 	// TODO: unify this reset logic in a base class all views can use
 	if v.t >= pointsInTime(v.rss) {
@@ -86,8 +87,8 @@ func (v *MEMView) Update(state *host.State) error {
 	}
 
 	cgroupMemLimit := ""
-	if state.Process.MemoryLimit != -1 {
-		cgroupMemLimit = fmt.Sprintf("- cgroup memory limit: %s ", humanize.Bytes(uint64(state.Process.MemoryLimit)))
+	if state.Process.MemoryLimit > 0 && state.Process.MemoryLimit < int(memAvail) {
+		cgroupMemLimit = fmt.Sprintf("- cgroup limit: %s ", humanize.Bytes(uint64(state.Process.MemoryLimit)))
 	}
 
 	v.rss.Title = fmt.Sprintf(" resident memory - %s of %s (%.1f%%) %s", humanize.Bytes(uint64(used)),

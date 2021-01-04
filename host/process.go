@@ -35,14 +35,23 @@ type Process struct {
 	Tasks       []Task
 }
 
+func readIntFromFile(filepath string) (int, error) {
+	s, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		return -1, err
+	}
+	return strconv.Atoi(strings.TrimSpace(string(s)))
+}
+
 func parseProcess(pid int, procfs procfs.FS) (proc Process, err error) {
 	var startTimeSecs float64
 
 	proc = Process{
-		PID:     pid,
-		Users:   make([]*user.User, 0),
-		Groups:  make([]*user.Group, 0),
-		FDInfos: make(map[string]FDInfo),
+		PID:         pid,
+		Users:       make([]*user.User, 0),
+		Groups:      make([]*user.Group, 0),
+		FDInfos:     make(map[string]FDInfo),
+		MemoryLimit: -1, // unlimited by default
 	}
 
 	// gather the process specific info
@@ -72,36 +81,24 @@ func parseProcess(pid int, procfs procfs.FS) (proc Process, err error) {
 		return
 	}
 
-	// get memory limit for the process in cgroups (v1 or v2)
-	proc.MemoryLimit = -1 // unlimited by default
-
-	if cgroups, err := proc.Process.Cgroups(); err == nil {
-
-		readValue := func(filepath string) (int, error) {
-			memLimitStr, err := ioutil.ReadFile(filepath)
-			if err != nil {
-				return -1, err
+	if cGroups, err := proc.Process.Cgroups(); err == nil {
+		for _, cGroup := range cGroups {
+			search := []string{
+				"/sys/fs/cgroup" + cGroup.Path,
+				"/sys/fs/cgroup/memory" + cGroup.Path,
 			}
 
-			memLimit, err := strconv.Atoi(strings.TrimSpace(string(memLimitStr)))
-			return memLimit, err
-		}
-
-		for _, cgroup := range cgroups {
-			memCgroup := "/sys/fs/cgroup" + cgroup.Path
-
-			// v2 cgroup
-			if memoryLimit, err := readValue(memCgroup + "/memory.max"); err == nil {
-				proc.MemoryLimit = memoryLimit
-				break
+			for _, memCgroup := range search {
+				if memoryLimit, err := readIntFromFile(memCgroup + "/memory.max"); err == nil {
+					// v2 cgroup
+					proc.MemoryLimit = memoryLimit
+					break
+				} else if memoryLimit, err = readIntFromFile(memCgroup + "/memory.limit_in_bytes"); err == nil {
+					// v1 cgroup
+					proc.MemoryLimit = memoryLimit
+					break
+				}
 			}
-
-			// v1 cgroup
-			if memoryLimit, err := readValue(memCgroup + "/memory.limit_in_bytes"); err == nil {
-				proc.MemoryLimit = memoryLimit
-				break
-			}
-
 		}
 	}
 
