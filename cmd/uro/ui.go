@@ -87,7 +87,7 @@ func updateUI() {
 	drawable := getActiveTab().Drawable()
 	headRatio := 1. / 50
 
-	if len(availTabIDS) == 1 {
+	if len(availTabIDS) == 1 && recorder == nil && player == nil {
 		headRatio = 0.0
 	}
 
