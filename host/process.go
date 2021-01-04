@@ -26,7 +26,7 @@ type Process struct {
 	RootDir     string
 	Cwd         string
 	WaitChan    string
-	MemoryLimit int
+	MemoryLimit uint64
 	Status      procfs.ProcStatus
 	Maps        []*procfs.ProcMap
 	FDs         procfs.ProcFDInfos
@@ -35,12 +35,12 @@ type Process struct {
 	Tasks       []Task
 }
 
-func readIntFromFile(filepath string) (int, error) {
+func readIntFromFile(filepath string) (uint64, error) {
 	s, err := ioutil.ReadFile(filepath)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
-	return strconv.Atoi(strings.TrimSpace(string(s)))
+	return strconv.ParseUint(strings.TrimSpace(string(s)), 10, 64)
 }
 
 func parseProcess(pid int, procfs procfs.FS) (proc Process, err error) {
@@ -51,7 +51,7 @@ func parseProcess(pid int, procfs procfs.FS) (proc Process, err error) {
 		Users:       make([]*user.User, 0),
 		Groups:      make([]*user.Group, 0),
 		FDInfos:     make(map[string]FDInfo),
-		MemoryLimit: -1, // unlimited by default
+		MemoryLimit: 0, // unlimited by default
 	}
 
 	// gather the process specific info
