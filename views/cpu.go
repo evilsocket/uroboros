@@ -29,12 +29,13 @@ func (h *cpuHistory) Set(state *host.State) {
 }
 
 type CPUView struct {
+	viewWithPlots
+
 	history cpuHistory
 	tot     *widgets.Plot
 	usr     *widgets.Plot
 	sys     *widgets.Plot
 	grid    *ui.Grid
-	t       int
 	last    float64
 }
 
@@ -76,7 +77,6 @@ func NewCPUView() *CPUView {
 		),
 	)
 
-
 	return &v
 }
 
@@ -98,6 +98,8 @@ func (v *CPUView) Update(state *host.State) error {
 		return nil
 	}
 
+	v.trackUpdate(v.sys, v.usr, v.tot)
+
 	sDelta := float64(state.Process.Stat.STime - v.history.STime)
 	uDelta := float64(state.Process.Stat.UTime - v.history.UTime)
 	total := sDelta + uDelta
@@ -111,13 +113,6 @@ func (v *CPUView) Update(state *host.State) error {
 
 	v.history.Set(state)
 
-	if v.t >= pointsInTime(v.tot) {
-		v.t = 0
-		v.sys.Data[0] = []float64{}
-		v.usr.Data[0] = []float64{}
-		v.tot.Data[0] = []float64{}
-	}
-
 	v.last = cpuTot
 
 	v.tot.Title = fmt.Sprintf(" total usage %.1f%% ", cpuTot)
@@ -127,14 +122,9 @@ func (v *CPUView) Update(state *host.State) error {
 	v.sys.Title = fmt.Sprintf(" kernel time %.1f%% ", cpuSys)
 	v.sys.Data[0] = append(v.sys.Data[0], cpuSys)
 
-	v.t++
-
 	return nil
 }
 
 func (v *CPUView) Drawable() ui.Drawable {
-	if len(v.tot.Data[0]) >= 2 {
-		return v.grid
-	}
-	return empty
+	return v.grid
 }

@@ -54,7 +54,7 @@ func init() {
 }
 
 type FDView struct {
-	t      int
+	viewWithPlots
 	last   int
 	cursor int
 	plot   *widgets.Plot
@@ -64,7 +64,7 @@ type FDView struct {
 
 func NewFDView() *FDView {
 	v := FDView{
-		plot:  makeNLinesPlot(" fds ", 3),
+		plot:  makeNLinesPlot(" fds ", 3, nil),
 		table: widgets.NewTable(),
 		grid:  ui.NewGrid(),
 	}
@@ -158,15 +158,12 @@ func (v *FDView) Update(state *host.State) error {
 		})
 	}
 
-	doReset := v.t >= pointsInTime(v.plot)
-	if doReset {
-		v.t = 0
-	}
+	v.trackUpdate(v.plot)
 
-	updateNLinesPlot(v.plot, doReset,
-		[]float64{float64(numFiles), float64(numSocks), float64(numOther)},
-		fmt.Sprintf(" files:%d sockets:%d other:%d ", numFiles, numSocks, numOther))
-	v.t++
+	v.plot.Title = fmt.Sprintf(" files:%d sockets:%d other:%d ", numFiles, numSocks, numOther)
+	v.plot.Data[0] = append(v.plot.Data[0], float64(numFiles))
+	v.plot.Data[1] = append(v.plot.Data[1], float64(numSocks))
+	v.plot.Data[2] = append(v.plot.Data[2], float64(numOther))
 
 	totRows := len(rows)
 	hasScroll, scrollMsg, from, to := tableSetScroll(v.table, totRows, v.cursor)
@@ -185,8 +182,5 @@ func (v *FDView) Update(state *host.State) error {
 }
 
 func (v *FDView) Drawable() ui.Drawable {
-	if len(v.plot.Data[0]) >= 2 {
-		return v.grid
-	}
-	return empty
+	return v.grid
 }

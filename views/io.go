@@ -14,11 +14,11 @@ func init() {
 }
 
 type IOView struct {
-	t     int
+	viewWithPlots
 
 	prevRChar uint64
 	prevWChar uint64
-	prevTime time.Time
+	prevTime  time.Time
 
 	speed *widgets.Plot
 	char  *widgets.Plot
@@ -27,9 +27,9 @@ type IOView struct {
 }
 
 func NewIOView() *IOView {
-	char := makeNLinesPlot(" total ", 2)
-	speed := makeNLinesPlot(" speed ", 2)
-	bytes := makeNLinesPlot(" storage ", 2)
+	char := makeNLinesPlot(" total ", 2, []ui.Color{ui.ColorGreen, ui.ColorRed})
+	speed := makeNLinesPlot(" speed ", 2, []ui.Color{ui.ColorGreen, ui.ColorRed})
+	bytes := makeNLinesPlot(" storage ", 2, []ui.Color{ui.ColorGreen, ui.ColorRed})
 
 	grid := ui.NewGrid()
 
@@ -66,30 +66,26 @@ func (v *IOView) Title() string {
 }
 
 func (v *IOView) Update(state *host.State) error {
-	doReset := v.t >= pointsInTime(v.char)
-	if doReset {
-		v.t = 0
-	}
+	v.trackUpdate(v.speed, v.char, v.bytes)
 
 	io := state.Process.IO
 
 	perSec := 1. / state.ObservedAt.Sub(v.prevTime).Seconds()
-	readSpeed := float64(io.RChar - v.prevRChar) * perSec
-	writeSpeed := float64(io.WChar - v.prevWChar) * perSec
+	readSpeed := float64(io.RChar-v.prevRChar) * perSec
+	writeSpeed := float64(io.WChar-v.prevWChar) * perSec
 
-	updateNLinesPlot(v.speed, doReset,
-		[]float64{readSpeed, writeSpeed},
-		fmt.Sprintf(" speed (r:%s/s w:%s/s) ", humanize.Bytes(uint64(readSpeed)), humanize.Bytes(uint64(writeSpeed))))
+	v.speed.Data[0] = append(v.speed.Data[0], readSpeed)
+	v.speed.Data[1] = append(v.speed.Data[1], writeSpeed)
+	v.speed.Title = fmt.Sprintf(" speed (r:%s/s w:%s/s) ", humanize.Bytes(uint64(readSpeed)), humanize.Bytes(uint64(writeSpeed)))
 
-	updateNLinesPlot(v.char, doReset,
-		[]float64{float64(io.RChar), float64(io.WChar)},
-		fmt.Sprintf(" total (r:%s w:%s) ", humanize.Bytes(io.RChar), humanize.Bytes(io.WChar)))
+	v.char.Data[0] = append(v.char.Data[0], float64(io.RChar))
+	v.char.Data[1] = append(v.char.Data[1], float64(io.WChar))
+	v.char.Title = fmt.Sprintf(" total (r:%s w:%s) ", humanize.Bytes(io.RChar), humanize.Bytes(io.WChar))
 
-	updateNLinesPlot(v.bytes, doReset,
-		[]float64{float64(io.ReadBytes), float64(io.WriteBytes)},
-		fmt.Sprintf(" storage (r:%s w:%s) ", humanize.Bytes(io.ReadBytes), humanize.Bytes(io.WriteBytes)))
+	v.bytes.Data[0] = append(v.bytes.Data[0], float64(io.ReadBytes))
+	v.bytes.Data[1] = append(v.bytes.Data[1], float64(io.WriteBytes))
+	v.bytes.Title = fmt.Sprintf(" storage (r:%s w:%s) ", humanize.Bytes(io.ReadBytes), humanize.Bytes(io.WriteBytes))
 
-	v.t++
 	v.prevRChar = io.RChar
 	v.prevWChar = io.WChar
 	v.prevTime = state.ObservedAt
@@ -98,8 +94,5 @@ func (v *IOView) Update(state *host.State) error {
 }
 
 func (v *IOView) Drawable() ui.Drawable {
-	if len(v.char.Data[0]) >= 2 {
-		return v.grid
-	}
-	return empty
+	return v.grid
 }

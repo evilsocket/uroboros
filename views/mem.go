@@ -13,12 +13,13 @@ func init() {
 }
 
 type MEMView struct {
+	viewWithPlots
+
 	rss  *widgets.Plot
 	virt *widgets.Plot
 	swap *widgets.Plot
 	grid *ui.Grid
 	last float64
-	t    int
 }
 
 func NewMEMView() *MEMView {
@@ -73,20 +74,11 @@ func (v *MEMView) Title() string {
 }
 
 func (v *MEMView) Update(state *host.State) error {
+	v.trackUpdate(v.rss, v.virt, v.swap)
+
 	memAvail := state.Memory.MemTotal * 1024
 	used := uint64(state.Process.Stat.RSS * state.PageSize)
 	usedPerc := float64(used) / float64(memAvail) * 100.0
-
-	// TODO: unify this reset logic in a base class all views can use
-	if v.t >= pointsInTime(v.rss) {
-		v.t = 0
-		v.rss.Data[0] = []float64{}
-		if len(v.rss.Data) == 2 {
-			v.rss.Data[1] = []float64{}
-		}
-		v.virt.Data[0] = []float64{}
-		v.swap.Data[0] = []float64{}
-	}
 
 	// check if we need to visualize the cgroup limit
 	if state.Process.MemoryLimit > 0 && state.Process.MemoryLimit < memAvail {
@@ -131,7 +123,6 @@ func (v *MEMView) Update(state *host.State) error {
 	v.swap.Data[0] = append(v.swap.Data[0], float64(state.Process.Status.VmSwap)/(1024*1024*1024))
 
 	v.last = usedPerc
-	v.t++
 
 	return nil
 }
