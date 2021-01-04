@@ -1,4 +1,4 @@
-Uroboros (shipped as `uro`) is A GNU/Linux monitoring tool focused on single processes. 
+Uroboros is a GNU/Linux monitoring tool focused on single processes. 
 
 While 
 utilities like top, ps and htop provide great overall details, they often lack useful temporal representation for 
