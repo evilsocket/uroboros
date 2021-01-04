@@ -118,6 +118,11 @@ func (v *MEMView) Update(state *host.State) error {
 						humanize.Bytes(used),
 						humanize.Bytes(memAvail),
 						usedPerc)
+		
+		if len(v.rss.Data) == 2 {
+			v.rss.Data = make([][]float64, 1)
+		}
+
 		v.rss.Data[0] = append(v.rss.Data[0], usedPerc)
 	}
 
