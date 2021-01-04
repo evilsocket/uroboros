@@ -32,20 +32,18 @@ func NewMEMView() *MEMView {
 	v.rss.Title = " mem usage "
 	v.rss.AxesColor = ui.ColorWhite
 	v.rss.Data = make([][]float64, 1)
-	v.rss.Data[0] = []float64{100.0}
+	v.rss.Data[0] = []float64{}
 	v.rss.MaxVal = 100.0
 
 	v.virt.Title = " virtual memory "
 	v.virt.AxesColor = ui.ColorWhite
 	v.virt.LineColors = []ui.Color{ui.ColorGreen}
 	v.virt.Data = make([][]float64, 1)
-	v.virt.Data[0] = []float64{0.0}
 
 	v.swap.Title = " swap "
 	v.swap.AxesColor = ui.ColorWhite
 	v.swap.LineColors = []ui.Color{ui.ColorBlue}
 	v.swap.Data = make([][]float64, 1)
-	v.swap.Data[0] = []float64{0.0}
 
 	v.grid.Set(
 		ui.NewRow(1.0/3,
@@ -82,12 +80,12 @@ func (v *MEMView) Update(state *host.State) error {
 	// TODO: unify this reset logic in a base class all views can use
 	if v.t >= pointsInTime(v.rss) {
 		v.t = 0
-		v.rss.Data[0] = []float64{100.0}
+		v.rss.Data[0] = []float64{}
 		if len(v.rss.Data) == 2 {
-			v.rss.Data[1] = []float64{100.0}
+			v.rss.Data[1] = []float64{}
 		}
-		v.virt.Data[0] = []float64{0.0}
-		v.swap.Data[0] = []float64{0.0}
+		v.virt.Data[0] = []float64{}
+		v.swap.Data[0] = []float64{}
 	}
 
 	// check if we need to visualize the cgroup limit
