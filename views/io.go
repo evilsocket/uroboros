@@ -28,7 +28,10 @@ type IOView struct {
 
 func NewIOView() *IOView {
 	v := &IOView{
-		grid: ui.NewGrid(),
+		grid:  ui.NewGrid(),
+		char:  makeNLinesPlot(" total ", 2, []ui.Color{ui.ColorGreen, ui.ColorRed}),
+		speed: makeNLinesPlot(" speed ", 2, []ui.Color{ui.ColorGreen, ui.ColorRed}),
+		bytes: makeNLinesPlot(" storage ", 2, []ui.Color{ui.ColorGreen, ui.ColorRed}),
 	}
 
 	v.Reset()
@@ -37,9 +40,9 @@ func NewIOView() *IOView {
 }
 
 func (v *IOView) Reset() {
-	v.char = makeNLinesPlot(" total ", 2, []ui.Color{ui.ColorGreen, ui.ColorRed})
-	v.speed = makeNLinesPlot(" speed ", 2, []ui.Color{ui.ColorGreen, ui.ColorRed})
-	v.bytes = makeNLinesPlot(" storage ", 2, []ui.Color{ui.ColorGreen, ui.ColorRed})
+	v.char.Data = make([][]float64, 2)
+	v.speed.Data = make([][]float64, 2)
+	v.bytes.Data = make([][]float64, 2)
 
 	v.grid.Set(
 		ui.NewRow(1.0/3,
