@@ -66,6 +66,10 @@ type NetworkEntry struct {
 
 func (e NetworkEntry) String() string {
 	if e.Proto == "unix" {
+		// see about empty paths: https://stackoverflow.com/questions/820782/how-do-i-find-out-what-programs-on-the-other-end-of-a-local-socket
+		if e.Path == "" {
+			return fmt.Sprintf("(%s) %s inode=%d", e.Proto, e.TypeString, e.INode)
+		}
 		return fmt.Sprintf("(%s) %s path='%s'", e.Proto, e.TypeString, e.Path)
 	} else if e.Proto == "netlink" {
 		return fmt.Sprintf("(%s) groups=%s", e.Proto, e.Groups)
