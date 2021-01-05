@@ -11,22 +11,27 @@ var recorder *record.Record
 var player *record.Record
 var paused = false
 
+var recordDecorations = []string {
+	" [rec] ",
+	"       ",
+}
+
+var pauseDecorations = []string {
+	" [pause] ",
+	"         ",
+}
+
 func decorateFirstTab(title string) string {
-	// TODO: refactor this blinking shit
-	// i really miss C's ternary operator :/
 	left := " "
+
 	if recorder != nil {
-		if t%2 == 0 {
-			left = " [rec] "
-		} else {
-			left = "       "
-		}
+		left = recordDecorations[t % 2]
 	} else if player != nil {
 		left = fmt.Sprintf(" [play %d%%] ", int(player.Progress()))
 	}
 
 	if paused && recorder == nil {
-		left = " [pause] "
+		left = pauseDecorations[t % 2]
 	}
 
 	return left + title
