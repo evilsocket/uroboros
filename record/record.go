@@ -69,10 +69,34 @@ func (r *Record) Reset() {
 	r.offset = 0
 }
 
+func (r *Record) CurrentFrameIndex() int {
+	r.Lock()
+	defer r.Unlock()
+	return r.offset + 1 // first is head
+}
+
+func (r *Record) TotalFrames() int {
+	r.Lock()
+	defer r.Unlock()
+	return r.limit + 1
+}
+
 func (r *Record) Progress() float64 {
 	r.Lock()
 	defer r.Unlock()
-	return float64(r.offset + 1) / float64(r.limit) * 100.0
+	return float64(r.offset+1) / float64(r.limit) * 100.0
+}
+
+func (r *Record) First(v interface{}) error {
+	r.Lock()
+	defer r.Unlock()
+	return json.Unmarshal(r.Head, v)
+}
+
+func (r *Record) Last(v interface{}) error {
+	r.Lock()
+	defer r.Unlock()
+	return json.Unmarshal(r.current, v)
 }
 
 func (r *Record) Next(v interface{}) error {

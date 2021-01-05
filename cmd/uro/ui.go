@@ -70,8 +70,19 @@ func closeUI() {
 			panic(err)
 		}
 	} else if player != nil {
-		// TODO: more replay stats
-		fmt.Printf("%s over.\n", replayFile)
+		var first, last host.State
+
+		if err = player.First(&first); err != nil {
+			fmt.Printf("%s over, error getting first frame: %v\n", replayFile, err)
+		} else if err = player.Last(&last); err != nil {
+			fmt.Printf("%s over, error getting last frame: %v\n", replayFile, err)
+		} else {
+			fmt.Printf("%s: replayed %d of %d frames for a total runtime of %v\n",
+				replayFile,
+				player.CurrentFrameIndex() + 1,
+				player.TotalFrames(),
+				last.ObservedAt.Sub(first.ObservedAt))
+		}
 	}
 }
 

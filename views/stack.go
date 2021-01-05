@@ -37,7 +37,6 @@ func NewSTACKView() *STACKView {
 	}
 	v.table.ColumnResizer = v.setColumnSizes
 
-	// TODO: autosize column depending on content
 	v.grid.Set(
 		ui.NewRow(1.,
 			ui.NewCol(1./5, v.tree),
