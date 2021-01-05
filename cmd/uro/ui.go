@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/evilsocket/islazy/str"
 	"github.com/evilsocket/uroboros/host"
-	"github.com/evilsocket/uroboros/record"
 	"github.com/evilsocket/uroboros/views"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
@@ -58,6 +57,15 @@ func setupUI(pid int) error {
 	tabs = widgets.NewTabPane(tabTitles...)
 	tabs.Border = false
 
+	// most tabs need at least two data points to correctly render
+	for i := 0; i < 2; i++ {
+		sampleData()
+		updateTabs()
+	}
+
+	// first render round
+	renderUI()
+
 	return nil
 }
 
@@ -94,7 +102,7 @@ func getActiveTab() views.View {
 	return tabViews[idx]
 }
 
-func updateUI() {
+func renderUI() {
 	drawable := getActiveTab().Drawable()
 	headRatio := 1. / 50
 
@@ -118,26 +126,6 @@ func updateUI() {
 var prevPID = 0
 
 func updateTabs() {
-	var tmp host.State
-	var state *host.State
-
-	if player != nil {
-		if !paused {
-			if err = player.Next(&tmp); err == record.EOF {
-				closeUI()
-				os.Exit(0)
-			} else if err != nil {
-				fatal("%v\n", err)
-			} else {
-				state = &tmp
-				state.Offline = true
-				host.TargetPID = state.Process.PID
-			}
-		}
-	} else if state, err = host.Observe(host.TargetPID); err != nil {
-		fatal("%v\n", err)
-	}
-
 	if prevPID > 0 && prevPID != host.TargetPID {
 		// the user selected a new process from the tree, views need reset
 		for _, tab := range tabViews {
@@ -147,10 +135,13 @@ func updateTabs() {
 
 	prevPID = host.TargetPID
 
+	dataLock.Lock()
+	defer dataLock.Unlock()
+
 	for i, tab := range tabViews {
 		// don't update the tab data if the user paused
 		if !paused {
-			if err = tab.Update(state); err != nil {
+			if err = tab.Update(lastState); err != nil {
 				fatal("error updating tab %s: %+v\n", availTabIDS[i], err)
 			}
 		}
@@ -159,13 +150,6 @@ func updateTabs() {
 			tabs.TabNames[i] = decorateFirstTab(tab.Title())
 		} else {
 			tabs.TabNames[i] = tab.Title()
-		}
-	}
-
-	if recorder != nil {
-		state.Offline = true
-		if err = recorder.Add(state); err != nil {
-			fatal("%v\n", err)
 		}
 	}
 

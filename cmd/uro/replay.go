@@ -21,6 +21,16 @@ var pauseDecorations = []string {
 	"         ",
 }
 
+func setupRecordReplay() error {
+	err = nil
+	if recordFile != "" {
+		recorder, err = record.New()
+	} else if replayFile != "" {
+		player, err = record.Load(replayFile)
+	}
+	return err
+}
+
 func decorateFirstTab(title string) string {
 	left := " "
 
