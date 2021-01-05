@@ -47,6 +47,12 @@ func NewCPUView() *CPUView {
 		grid: ui.NewGrid(),
 	}
 
+	v.Reset()
+
+	return &v
+}
+
+func (v* CPUView) Reset() {
 	v.tot.Title = " total usage "
 	v.tot.AxesColor = ui.ColorWhite
 	v.tot.LineColors = []ui.Color{ui.ColorRed}
@@ -76,8 +82,6 @@ func NewCPUView() *CPUView {
 			ui.NewCol(1.0, v.sys),
 		),
 	)
-
-	return &v
 }
 
 func (v *CPUView) AvailableFor(pid int) bool {

@@ -26,6 +26,12 @@ func NewSTACKView() *STACKView {
 		grid:  ui.NewGrid(),
 	}
 
+	v.Reset()
+
+	return &v
+}
+
+func (v *STACKView) Reset() {
 	v.tree.WrapText = false
 	v.tree.SelectedRowStyle = ui.NewStyle(ui.ColorYellow, ui.ColorBlack, ui.ModifierBold)
 
@@ -43,8 +49,6 @@ func NewSTACKView() *STACKView {
 			ui.NewCol(1.-1./5, v.table),
 		),
 	)
-
-	return &v
 }
 
 func (v *STACKView) Event(e ui.Event) {

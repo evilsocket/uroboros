@@ -30,10 +30,15 @@ func NewMEMView() *MEMView {
 		grid: ui.NewGrid(),
 	}
 
+	v.Reset()
+
+	return &v
+}
+
+func (v *MEMView) Reset() {
 	v.rss.Title = " mem usage "
 	v.rss.AxesColor = ui.ColorWhite
 	v.rss.Data = make([][]float64, 1)
-	v.rss.Data[0] = []float64{}
 	v.rss.MaxVal = 100.0
 
 	v.virt.Title = " virtual memory "
@@ -57,8 +62,6 @@ func NewMEMView() *MEMView {
 			ui.NewCol(1.0, v.swap),
 		),
 	)
-
-	return &v
 }
 
 func (v *MEMView) AvailableFor(pid int) bool {

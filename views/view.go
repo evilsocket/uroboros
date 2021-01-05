@@ -9,6 +9,7 @@ var registered = map[string]View{}
 
 type View interface {
 	AvailableFor(pid int) bool
+	Reset()
 	Update(state *host.State) error
 	Title() string
 	Event(e ui.Event)

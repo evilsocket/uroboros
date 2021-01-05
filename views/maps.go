@@ -24,6 +24,12 @@ func NewMAPSView() *MAPSView {
 		table: widgets.NewTable(),
 	}
 
+	v.Reset()
+
+	return &v
+}
+
+func (v *MAPSView) Reset() {
 	v.table.TextStyle = ui.NewStyle(ui.ColorWhite)
 	v.table.RowSeparator = true
 	v.table.FillRow = true
@@ -31,10 +37,7 @@ func NewMAPSView() *MAPSView {
 		{" address range ", " perms ", " offset ", " dev ", " inode ", " path "},
 	}
 	v.table.RowStyles[0] = ui.NewStyle(ui.ColorWhite, ui.ColorBlack, ui.ModifierBold)
-
 	v.table.ColumnResizer = v.setColumnSizes
-
-	return &v
 }
 
 func (v *MAPSView) Title() string {

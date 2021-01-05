@@ -115,6 +115,8 @@ func updateUI() {
 	ui.Render(grid)
 }
 
+var prevPID = 0
+
 func updateTabs() {
 	var tmp host.State
 	var state *host.State
@@ -135,6 +137,15 @@ func updateTabs() {
 	} else if state, err = host.Observe(host.TargetPID); err != nil {
 		fatal("%v\n", err)
 	}
+
+	if prevPID > 0 && prevPID != host.TargetPID {
+		// the user selected a new process from the tree, views need reset
+		for _, tab := range tabViews {
+			tab.Reset()
+		}
+	}
+
+	prevPID = host.TargetPID
 
 	for i, tab := range tabViews {
 		// don't update the tab data if the user paused

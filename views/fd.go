@@ -69,6 +69,12 @@ func NewFDView() *FDView {
 		grid:  ui.NewGrid(),
 	}
 
+	v.Reset()
+
+	return &v
+}
+
+func (v *FDView) Reset() {
 	v.table.TextStyle = ui.NewStyle(ui.ColorWhite)
 	v.table.RowSeparator = true
 	v.table.FillRow = true
@@ -85,8 +91,6 @@ func NewFDView() *FDView {
 			ui.NewCol(1.0, v.table),
 		),
 	)
-
-	return &v
 }
 
 func (v *FDView) AvailableFor(pid int) bool {
