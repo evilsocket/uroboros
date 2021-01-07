@@ -9,13 +9,16 @@ builds:
       - -s -w
     goos:
       - linux
+    goarch:
+      - 386
+      - amd64
+      - arm
+      - arm64
+      - mips
+      - mipsle
+      - mips64
+      - mips64le
     main: ./cmd/uro/
-
-archives:
-  - replacements:
-      linux: Linux
-      386: i386
-      amd64: x86_64
 
 checksum:
   name_template: 'checksums.txt'
