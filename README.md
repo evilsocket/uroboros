@@ -56,4 +56,4 @@ For more options:
 
 ## License
 
-Released under the GPL 3 license.
+Released under the GPL3 license.
