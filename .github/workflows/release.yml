@@ -1,0 +1,59 @@
+name: Release
+on:
+  create:
+    tags:
+      - v*
+
+jobs:
+  release:
+    name: Release on GitHub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Find Last Tag
+        id: last
+        uses: jimschubert/query-tag-action@v1
+        with:
+          include: 'v*'
+          exclude: '*-rc*'
+          commit-ish: 'HEAD~'
+          skip-unshallow: 'true'
+
+      - name: Find Current Tag
+        id: current
+        uses: jimschubert/query-tag-action@v1
+        with:
+          include: 'v*'
+          exclude: '*-rc*'
+          commit-ish: '@'
+          skip-unshallow: 'true'
+
+      - name: Create Changelog
+        id: changelog
+        uses: jimschubert/beast-changelog-action@v1
+        with:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          CONFIG_LOCATION: .github/changelog.json
+          FROM: ${{steps.last.outputs.tag}}
+          TO: ${{steps.current.outputs.tag}}
+          OUTPUT: .github/CHANGELOG.md
+
+      - name: View Changelog
+        run: cat .github/CHANGELOG.md
+
+      - name: Validates GO releaser config
+        uses: docker://goreleaser/goreleaser:latest
+        with:
+          args: check
+
+      - name: Create release on GitHub
+        uses: docker://goreleaser/goreleaser:latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: release --rm-dist --release-notes .github/CHANGELOG.md
+          workdir: ./cmd/uro

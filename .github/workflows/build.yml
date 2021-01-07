@@ -1,0 +1,27 @@
+name: Build and Test
+
+# This workflow will run on master branch and on any pull requests targeting master
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '.github/**'
+  pull_request:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: make uro
