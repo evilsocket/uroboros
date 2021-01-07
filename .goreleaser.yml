@@ -7,7 +7,7 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-    main: ./cmd/driplane/*.go
+    main: ./cmd/uro/*.go
 
 archives:
   - replacements:
