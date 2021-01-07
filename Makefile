@@ -10,6 +10,9 @@ install: uro
 	cp _build/uro /usr/bin/
 	chmod a+x /usr/bin/uro
 
+test:
+	go test -short ./...
+
 _build:
 	mkdir -p _build
 
