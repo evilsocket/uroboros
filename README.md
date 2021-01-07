@@ -1,5 +1,7 @@
 Uroboros is a GNU/Linux monitoring tool focused on single processes. 
 
+![Build and Test](https://github.com/evilsocket/uroboros/workflows/Build%20and%20Test/badge.svg)
+
 While 
 utilities like top, ps and htop provide great overall details, they often lack useful temporal representation for 
 specific processes, such visual representation of the process data points can be used to profile, debug and 
