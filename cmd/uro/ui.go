@@ -8,6 +8,7 @@ import (
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"os"
+	"time"
 )
 
 var tabIDS = "info, stack, cpu, mem, maps, io, fd"
@@ -87,7 +88,7 @@ func closeUI() {
 		} else {
 			fmt.Printf("%s: replayed %d of %d frames for a total runtime of %v\n",
 				replayFile,
-				player.CurrentFrameIndex() + 1,
+				player.CurrentFrameIndex()+1,
 				player.TotalFrames(),
 				last.ObservedAt.Sub(first.ObservedAt))
 		}
@@ -154,4 +155,47 @@ func updateTabs() {
 	}
 
 	t++
+}
+
+func uiLoop() {
+	uiEvents := ui.PollEvents()
+	dataTicker := time.NewTicker(time.Millisecond * time.Duration(dataPeriod)).C
+	viewTicker := time.NewTicker(time.Millisecond * time.Duration(viewPeriod)).C
+
+	for {
+		select {
+		case <-dataTicker:
+			sampleData()
+
+		case <-viewTicker:
+			updateTabs()
+			renderUI()
+
+		case e := <-uiEvents:
+			switch e.ID {
+			case "q", "<C-c>":
+				return
+
+			case "<Resize>":
+				payload := e.Payload.(ui.Resize)
+				grid.SetRect(0, 0, payload.Width, payload.Height)
+
+			case "<Left>":
+				tabs.FocusLeft()
+			case "<Right>":
+				tabs.FocusRight()
+
+			case "<Space>", "p":
+				paused = !paused
+
+			case "f":
+				sampleData()
+				updateTabs()
+				renderUI()
+			}
+
+			// propagate to current view
+			getActiveTab().Event(e)
+		}
+	}
 }

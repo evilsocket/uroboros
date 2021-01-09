@@ -4,10 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/evilsocket/uroboros/host"
-	ui "github.com/gizak/termui/v3"
 	"os"
 	"runtime/pprof"
-	"time"
 )
 
 var err error
@@ -64,44 +62,5 @@ func main() {
 
 	defer closeUI()
 
-	uiEvents := ui.PollEvents()
-	dataTicker := time.NewTicker(time.Millisecond * time.Duration(dataPeriod)).C
-	viewTicker := time.NewTicker(time.Millisecond * time.Duration(viewPeriod)).C
-
-	for {
-		select {
-		case <-dataTicker:
-			sampleData()
-
-		case <-viewTicker:
-			updateTabs()
-			renderUI()
-
-		case e := <-uiEvents:
-			switch e.ID {
-			case "q", "<C-c>":
-				return
-
-			case "<Resize>":
-				payload := e.Payload.(ui.Resize)
-				grid.SetRect(0, 0, payload.Width, payload.Height)
-
-			case "<Left>":
-				tabs.FocusLeft()
-			case "<Right>":
-				tabs.FocusRight()
-
-			case "<Space>", "p":
-				paused = !paused
-
-			case "f":
-				sampleData()
-				updateTabs()
-				renderUI()
-			}
-
-			// propagate to current view
-			getActiveTab().Event(e)
-		}
-	}
+	uiLoop()
 }
