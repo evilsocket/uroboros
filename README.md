@@ -55,7 +55,7 @@ For more options:
 | <kbd>&lt;Right&gt;</kbd> | Show the next tab view. |
 | <kbd>&lt;Left&gt;</kbd>  | Show the previous tab view. |
 | <kbd>&lt;Down&gt;</kbd>  | Scroll down tables. |
-| <kbd>&lt;Up&gt;</kbd>    | Scroll up tablesa. |
+| <kbd>&lt;Up&gt;</kbd>    | Scroll up tables. |
 |       <kbd>j</kbd>       | Scroll down lists. |
 |       <kbd>k</kbd>       | Scroll up lists. |
 | <kbd>&lt;Enter&gt;</kbd> | Select list elements. |
