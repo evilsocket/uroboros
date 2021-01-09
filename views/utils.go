@@ -28,8 +28,13 @@ func (v *viewWithPlots) trackUpdate(plots ...*widgets.Plot) bool{
 		v.t = 0
 		for _, plot := range plots {
 			for i, dataSoFar := range plot.Data {
+				size := len(dataSoFar)
+				last := 0.0
+				if size >= 1 {
+					last = dataSoFar[size - 1]
+				}
 				// we need to keep at least one
-				plot.Data[i] = []float64{dataSoFar[len(dataSoFar) - 1]}
+				plot.Data[i] = []float64{last}
 			}
 		}
 
