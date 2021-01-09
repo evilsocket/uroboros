@@ -48,13 +48,20 @@ For more options:
     
     uro -help
 
-### UI Navigation
+### Keybindings
 
-* Left and right arrows to navigate tabs.
-* Up and down arrows to scroll tables.
-* `j` and `k` to navigate lists, enter to select an element.
-* Use `p` to pause, `f` to fast forward in replay mode.
-* Use `q` or `C-c` to quit.
+|           Key            | Action                                                     |
+| :----------------------: | ---------------------------------------------------------- |
+| <kbd>&lt;Right&gt;</kbd> | Show the next tab view. |
+| <kbd>&lt;Left&gt;</kbd>  | Show the previous tab view. |
+| <kbd>&lt;Down&gt;</kbd>  | Scroll down tables. |
+| <kbd>&lt;Up&gt;</kbd>    | Scroll up tablesa. |
+|       <kbd>j</kbd>       | Scroll down lists. |
+|       <kbd>k</kbd>       | Scroll up lists. |
+| <kbd>&lt;Enter&gt;</kbd> | Select list elements. |
+|       <kbd>p</kbd>       | Pause (default and replay modes). |
+|       <kbd>f</kbd>       | Fast forward (replay mode). |
+|       <kbd>q</kbd> / <kbd>&lt;C-c&gt;</kbd> | Quit uro. |
 
 ## License
 
