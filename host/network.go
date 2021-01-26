@@ -3,6 +3,7 @@ package host
 import (
 	"bufio"
 	"fmt"
+	"github.com/evilsocket/islazy/fs"
 	"github.com/evilsocket/islazy/str"
 	"net"
 	"os"
@@ -182,7 +183,12 @@ func parseNetlink(filename, line, protocol string) (entry NetworkEntry, err erro
 
 // Parse scans and retrieves the opened connections, from /proc/net/ files
 func parseNetworkForProtocol(proto string) ([]NetworkEntry, error) {
+	// if the file just doesn't exist do not return an error
 	filename := fmt.Sprintf("%s/net/%s", ProcFS, proto)
+	if fs.Exists(filename) == false {
+		return nil, nil
+	}
+
 	fd, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -225,7 +231,7 @@ func parseNetworkInodes() (NetworkINodes, error) {
 	for i := range protocols {
 		if entries, err := parseNetworkForProtocol(protocols[i]); err != nil {
 			return nil, err
-		} else {
+		} else if entries != nil {
 			for _, entry := range entries {
 				byInode[entry.INode] = entry
 			}
