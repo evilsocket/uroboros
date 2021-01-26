@@ -22,8 +22,8 @@ would do.
 For the moment there are no binary releases and building from sources is the only way (requires the go compiler, 
 will install the binary in $GOPATH/bin):
 
-    export GOMODULES=on # make sure go modules are used
-    go get github.com/evilsocket/uroboros/cmd/uro
+    # make sure go modules are used
+    GO111MODULE=on go get github.com/evilsocket/uroboros/cmd/uro
 
 To monitor by pid:
 
