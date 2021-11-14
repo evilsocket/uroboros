@@ -19,4 +19,5 @@ type State struct {
 	Stat          procfs.Stat
 	Memory        procfs.Meminfo
 	Process       Process // process specific stats
+	CPUInfo       []procfs.CPUInfo
 }

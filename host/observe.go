@@ -51,5 +51,9 @@ func Observe(pid int) (*State, error) {
 		}
 	}
 
+	if state.CPUInfo, err = state.procfs.CPUInfo(); err != nil {
+		return nil, err
+	}
+
 	return state, err
 }
