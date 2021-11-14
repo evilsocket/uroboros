@@ -111,9 +111,10 @@ func (v *CPUView) Update(state *host.State) error {
 	total /= clockTicks
 	seconds := state.ObservedAt.Sub(v.history.At).Seconds()
 
-	cpuUser := (uDelta / clockTicks / seconds) * 100.0
-	cpuSys := (sDelta / clockTicks / seconds) * 100.0
-	cpuTot := (total / seconds) * 100.0
+	numCPUs := float64(len(state.CPUInfo))
+	cpuUser := (uDelta / clockTicks / seconds / numCPUs) * 100.0
+	cpuSys := (sDelta / clockTicks / seconds / numCPUs) * 100.0
+	cpuTot := (total / seconds / numCPUs) * 100.0
 
 	v.history.Set(state)
 
