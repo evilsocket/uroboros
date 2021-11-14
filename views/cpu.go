@@ -58,18 +58,21 @@ func (v* CPUView) Reset() {
 	v.tot.LineColors = []ui.Color{ui.ColorRed}
 	v.tot.MaxVal = 100.0
 	v.tot.Data = make([][]float64, 1)
+	v.tot.Data[0] = append(v.tot.Data[0], 0.0)
 
 	v.usr.Title = " user time "
 	v.usr.AxesColor = ui.ColorWhite
 	v.usr.LineColors = []ui.Color{ui.ColorYellow}
 	v.usr.MaxVal = 100.0
 	v.usr.Data = make([][]float64, 1)
+	v.usr.Data[0] = append(v.usr.Data[0], 0.0)
 
 	v.sys.Title = " kernel time "
 	v.sys.AxesColor = ui.ColorWhite
 	v.sys.LineColors = []ui.Color{ui.ColorWhite}
 	v.sys.MaxVal = 100.0
 	v.sys.Data = make([][]float64, 1)
+	v.sys.Data[0] = append(v.sys.Data[0], 0.0)
 
 	v.grid.Set(
 		ui.NewRow(1.0/3,
